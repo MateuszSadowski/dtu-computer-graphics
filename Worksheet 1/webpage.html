@@ -8,10 +8,10 @@
         <script src="../angelCommon/MV.js" type="text/javascript"></script>
         <script id="vertex-shader" type="x-shader/x-vertex">
             attribute vec4 a_Position;
-            uniform float u_Rotation;
+            uniform float u_Translation;
             void main() {
-                gl_Position.x = -sin(u_Rotation) * a_Position.x + cos(u_Rotation) * a_Position.y;
-                gl_Position.y = sin(u_Rotation) * a_Position.y + cos(u_Rotation) * a_Position.x;
+                gl_Position.x = a_Position.x;
+                gl_Position.y = a_Position.y + u_Translation;
                 gl_Position.z = 0.0;
                 gl_Position.w = 1.0;
             }

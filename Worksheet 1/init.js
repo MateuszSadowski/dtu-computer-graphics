@@ -1,10 +1,16 @@
 onload = init;
 
-var gl;
-var vertices;
+let CIRCLE_RADIUS = 0.3;
+let UPPER_BOUND = 0.6;
+let LOWER_BOUND = -0.6;
+let TRANSLATION_STEP = 0.01;
 
-var rotation = 0.0;
-var vRotation;
+var gl;
+var vertices = [];
+
+var translation = 0.0;
+var vTranslation;
+var bounceUp = true;
 
 function init() {
     var canvas = document.getElementById("c");
@@ -19,7 +25,16 @@ function init() {
     gl.useProgram(program);
 
     //Set up data for vertex shader
-    vertices = [vec2(0.5, 0.0), vec2(0.0, 0.5), vec2(-0.5, 0.0), vec2(0.0, -0.5) ];
+    var center = vec2(0, 0);
+    vertices.push(center);
+    for (let i = 0; i <= 360; i++) {
+        var j = i * Math.PI / 180;
+        vertices.push(vec2(
+            CIRCLE_RADIUS * Math.sin(j),
+            CIRCLE_RADIUS * Math.cos(j)
+        ));
+        
+    }
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
@@ -27,20 +42,31 @@ function init() {
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
-    vRotation = gl.getUniformLocation(program, "u_Rotation");
+    vTranslation = gl.getUniformLocation(program, "u_Translation");
 
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, vertices.length);
     render();
 }
 
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    //Set rotation
-    rotation += 0.05;
-    gl.uniform1f(vRotation, rotation);
+    bounce();
+    gl.uniform1f(vTranslation, translation);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, vertices.length);
 
     requestAnimFrame(render);
+}
+
+function bounce() {
+    if(translation >= UPPER_BOUND) {
+        bounceUp = false;
+    } else if(translation <= LOWER_BOUND) {
+        bounceUp = true;
+    }
+    if(bounceUp) {
+        translation += TRANSLATION_STEP;
+    } else {
+        translation -= TRANSLATION_STEP;
+    }
 }
 
 /**
