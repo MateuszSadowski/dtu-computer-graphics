@@ -5,6 +5,7 @@ let CIRCLE_POINTS = 50;
 let UPPER_BOUND = 0.6;
 let LOWER_BOUND = -0.6;
 let TRANSLATION_STEP = 0.01;
+var RGBindex = 0;
 
 var gl;
 var vertices = [];
@@ -29,6 +30,7 @@ function init() {
     //Set up data for vertex shader
     var center = vec2(0, 0);
     colors.push(vec3(1, 1, 1));
+    // colors.push(getNextRGB());
     vertices.push(center);
     for (let i = 0; i <= CIRCLE_POINTS; i++) {
         var j = 2 * i * Math.PI / CIRCLE_POINTS;
@@ -36,7 +38,7 @@ function init() {
             CIRCLE_RADIUS * Math.sin(j),
             CIRCLE_RADIUS * Math.cos(j)
         ));
-        colors.push(getRandomRGB());
+        colors.push(getNextRGB());
     }
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -80,9 +82,20 @@ function bounce() {
     }
 }
 
-function getRandomRGB() {
-    // var rgb = vec3(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255));
-    var rgb = vec3(0, 1, 0);
+function getNextRGB() {
+    // var rgb = vec3(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255)); // this doesn't work
+    var rgb;
+    if(RGBindex == 0) {
+        rgb = vec3(1, 0, 0);
+        RGBindex = (RGBindex + 1) % 3;
+    } else if (RGBindex == 1) {
+        rgb = vec3(0, 1, 0);
+        RGBindex = (RGBindex + 1) % 3;
+    } else {
+        rgb = vec3(0, 0, 1);
+        RGBindex = (RGBindex + 1) % 3;
+    }
+    // var rgb = vec3(0, 1, 0);
     return rgb;
 }
 
