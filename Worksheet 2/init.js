@@ -10,23 +10,40 @@ let MAX_VERTICES = 1000;
 var numOfPoints = 0;
 var index = 0;
 
+let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
+
 function init() {
     //Set up canvas
     var canvas = document.getElementById("c");
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
+    let chooseColorMenu = document.getElementById("choose-color-menu");
+    let clearCanvasMenu = document.getElementById("clear-canvas-menu");
+    let clearCanvasButton = document.getElementById("clear-canvas-button");
     canvas.addEventListener("click", function(ev) {
         var boundingBox = ev.target.getBoundingClientRect();
         mousePosition = vec2(2 * (ev.clientX - boundingBox.left) / canvas.width - 1, 2 * (canvas.height - ev.clientY + boundingBox.top - 1) / canvas.height - 1);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);        
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec2'], flatten(mousePosition));
+        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
         numOfPoints = Math.max(numOfPoints, ++index);
         index %= MAX_VERTICES;
         render();
     });
+    clearCanvasButton.addEventListener("click", function() {
+        var bgColor = bgColors[clearCanvasMenu.selectedIndex];
+        gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
+        numOfPoints = 0;
+        index = 0;
+        render();
+    });
+
 
     //Set up WebGL context
     gl = setupWebGL(canvas);
-    gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
+    var bgColor = bgColors[clearCanvasMenu.selectedIndex];
+    gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     //Initialize shaders
@@ -40,6 +57,14 @@ function init() {
     var vPosition = gl.getAttribLocation(program, "a_Position");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES*sizeof['vec3'], gl.STATIC_DRAW);
+    var vColor = gl.getAttribLocation(program, "a_Color");
+    gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
+    // vColor = vec3(1, 1, 0);
 }
 
 function render() {
