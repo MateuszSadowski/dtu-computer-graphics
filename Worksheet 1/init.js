@@ -1,12 +1,14 @@
 onload = init;
 
 let CIRCLE_RADIUS = 0.3;
+let CIRCLE_POINTS = 50;
 let UPPER_BOUND = 0.6;
 let LOWER_BOUND = -0.6;
 let TRANSLATION_STEP = 0.01;
 
 var gl;
 var vertices = [];
+var colors = [];
 
 var translation = 0.0;
 var vTranslation;
@@ -26,14 +28,15 @@ function init() {
 
     //Set up data for vertex shader
     var center = vec2(0, 0);
+    colors.push(vec3(1, 1, 1));
     vertices.push(center);
-    for (let i = 0; i <= 360; i++) {
-        var j = i * Math.PI / 180;
+    for (let i = 0; i <= CIRCLE_POINTS; i++) {
+        var j = 2 * i * Math.PI / CIRCLE_POINTS;
         vertices.push(vec2(
             CIRCLE_RADIUS * Math.sin(j),
             CIRCLE_RADIUS * Math.cos(j)
         ));
-        
+        colors.push(getRandomRGB());
     }
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -43,6 +46,14 @@ function init() {
     gl.enableVertexAttribArray(vPosition);
 
     vTranslation = gl.getUniformLocation(program, "u_Translation");
+
+    //Set up data for fragment shader
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+    var vColor = gl.getAttribLocation(program, "a_Color");
+    gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
 
     render();
 }
@@ -67,6 +78,12 @@ function bounce() {
     } else {
         translation -= TRANSLATION_STEP;
     }
+}
+
+function getRandomRGB() {
+    // var rgb = vec3(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255));
+    var rgb = vec3(0, 1, 0);
+    return rgb;
 }
 
 /**
