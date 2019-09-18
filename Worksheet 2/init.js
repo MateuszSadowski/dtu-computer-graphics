@@ -2,15 +2,20 @@ onload = init;
 
 let CANVAS_WIDTH = 512;
 let CANVAS_HEIGHT = 512;
+let MAX_VERTICES = 1000;
+let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
+DrawingMode = {
+    "points": 0,
+    "triangles": 1
+}
 
 var gl;
-
-let MAX_VERTICES = 1000;
-
 var numOfPoints = 0;
 var index = 0;
-
-let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
+var drawingMode = DrawingMode.points;
+var pointIndices = [];
+var triangleIndices = [];
+var trianglePointsDrawn = 0;
 
 function init() {
     //Set up canvas
@@ -27,6 +32,7 @@ function init() {
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec2'], flatten(mousePosition));
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
+        addIndex(index);
         numOfPoints = Math.max(numOfPoints, ++index);
         index %= MAX_VERTICES;
         render();
@@ -50,6 +56,8 @@ function init() {
     var program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
+    //Set up arrays of indices for different drawing mode
+
     //Provide data for shaders
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -70,6 +78,20 @@ function init() {
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, numOfPoints);
+}
+
+function addIndex(index) {
+    if(drawingMode === DrawingMode.points) {
+        pointIndices.push(index);
+    } else if (drawingMode === DrawingMode.triangles && trianglePointsDrawn < 2) {
+        pointIndices.push(index);
+        trianglePointsDrawn++;
+    } else if (drawingMode === DrawingMode.triangles && trianglePointsDrawn === 2) {
+        trianglePointsDrawn.push(index);
+        pointIndices.pop();
+        pointIndices.pop();
+        trianglePointsDrawn = 0;
+    }
 }
 
 /**
