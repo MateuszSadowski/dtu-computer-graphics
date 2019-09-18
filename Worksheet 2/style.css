@@ -1,0 +1,36 @@
+#button-container {
+    display: flex;
+}
+
+button {
+    width: 150px;
+    margin: 10px;
+}
+
+#canvas-container {
+    display: flex;
+}
+
+#menu-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    width: 150px;
+    margin-left: 10px;
+}
+
+#choose-color-menu {
+    margin: 10;
+}
+
+select {
+    margin: 10px;
+}
+
+#clear-canvas-menu {
+    width: 100%;
+}
+
+.text {
+    size: 10em;
+}
