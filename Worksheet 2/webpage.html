@@ -28,9 +28,16 @@
 </head>
 
 <body>
-    <div id="button-container">
-        <button id="points-mode-button">Draw points</button>
-        <button id="triangles-mode-button">Draw triangles</button>
+    <div id="radio-container">
+        <span>Draw: </span>
+        <span class="radio-box">
+            <input type="radio" id="points-mode-button" name="drawing-mode" value="points" checked="checked">
+            <label for="points-mode-button">Points</label>
+        </span>
+        <span class="radio-box">
+            <input type="radio" id="triangles-mode-button" name="drawing-mode" value="triangles">
+            <label for="triangles-mode-button">Triangles</label>
+        </span>
     </div>
     <div id="canvas-container">
         <canvas id="c"></canvas>

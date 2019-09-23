@@ -1,5 +1,10 @@
-#button-container {
+#radio-container {
     display: flex;
+    padding: 5px;
+}
+
+.radio-box {
+    margin-left: 10px;
 }
 
 button {

@@ -21,9 +21,7 @@ function init() {
     let chooseColorMenu = document.getElementById("choose-color-menu");
     let clearCanvasMenu = document.getElementById("clear-canvas-menu");
     let clearCanvasButton = document.getElementById("clear-canvas-button");
-    let drawPointsButton = document.getElementById("points-mode-button");
-    let drawTrianglesButton = document.getElementById("triangles-mode-button");
-    canvas.addEventListener("click", function(ev) {
+    canvas.addEventListener("click", function (ev) {
         var boundingBox = ev.target.getBoundingClientRect();
         mousePosition = vec2(2 * (ev.clientX - boundingBox.left) / canvas.width - 1, 2 * (canvas.height - ev.clientY + boundingBox.top - 1) / canvas.height - 1);
         gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -36,20 +34,23 @@ function init() {
         // render();
         draw();
     });
-    clearCanvasButton.addEventListener("click", function() {
+    clearCanvasButton.addEventListener("click", function () {
         var bgColor = bgColors[clearCanvasMenu.selectedIndex];
         gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
         numOfPoints = 0;
         index = 0;
+        //TODO: fix that the vertex buffer is not emptied on clearing canvas
         render();
     });
-    drawPointsButton.addEventListener("click", function() {
-        drawingMode = gl.POINTS;
-    });
-    drawTrianglesButton.addEventListener("click", function() {
-        drawingMode = gl.TRIANGLES;
-    });
 
+    //https://stackoverflow.com/questions/8922002/attach-event-listener-through-javascript-to-radio-button
+    document.addDelegatedListener("click", "input[type='radio']", function (event) {
+        if (document.querySelector('input[name=drawing-mode]:checked').value === "points") {
+            drawingMode = gl.POINTS;
+        } else if (document.querySelector('input[name=drawing-mode]:checked').value === "triangles") {
+            drawingMode = gl.TRIANGLES;
+        }
+    });
 
     //Set up WebGL context
     gl = setupWebGL(canvas);
@@ -67,14 +68,14 @@ function init() {
     //Provide data for shaders
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES*sizeof['vec2'], gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES * sizeof['vec2'], gl.STATIC_DRAW);
     var vPosition = gl.getAttribLocation(program, "a_Position");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     var cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES*sizeof['vec3'], gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES * sizeof['vec3'], gl.STATIC_DRAW);
     var vColor = gl.getAttribLocation(program, "a_Color");
     gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
@@ -87,22 +88,21 @@ function render() {
 }
 
 function draw() {
-    console.log("draw");
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     var pointIndicesTmp = pointIndices.slice(0).reverse();
     var triangleIndicesTmp = triangleIndices.slice(0).reverse();
 
-    while(pointIndicesTmp.length > 0) {
+    while (pointIndicesTmp.length > 0) {
         var pointsToDraw = getPointsToDraw(pointIndicesTmp);
-        if(pointsToDraw !== -1) {
+        if (pointsToDraw !== -1) {
             gl.drawArrays(gl.POINTS, pointsToDraw[0], pointsToDraw.length);
         }
     }
 
-    while(triangleIndicesTmp.length > 0) {
+    while (triangleIndicesTmp.length > 0) {
         var trianglesToDraw = getTrianglesToDraw(triangleIndicesTmp);
-        if(trianglesToDraw !== -1) {
+        if (trianglesToDraw !== -1) {
             trianglesToDraw = flatten(trianglesToDraw);
             gl.drawArrays(gl.TRIANGLES, trianglesToDraw[0], trianglesToDraw.length);
         }
@@ -111,14 +111,14 @@ function draw() {
 }
 
 function getPointsToDraw(pointInd) {
-    if(pointInd.length === 0) {
+    if (pointInd.length === 0) {
         return -1;
     }
 
     var pointsToDraw = [];
     var ind = pointInd.pop();
     pointsToDraw.push(ind);
-    while(pointInd.length > 0 && ind - pointInd[0] === 1) {
+    while (pointInd.length > 0 && ind - pointInd[0] === 1) {
         ind = pointInd.pop();
         pointsToDraw.push(ind);
     }
@@ -127,23 +127,23 @@ function getPointsToDraw(pointInd) {
 }
 
 function getTrianglesToDraw(triangleInd) {
-    if(triangleInd.length === 0) {
+    if (triangleInd.length === 0) {
         return -1;
     }
 
     var trianglePointsToDraw = [];
     var ind = triangleInd.pop();
     trianglePointsToDraw.push(ind);
-    while(triangleInd.length > 0 && ind - triangleInd[0] === 1) {
+    while (triangleInd.length > 0 && ind - triangleInd[0] === 1) {
         ind = triangleInd.pop();
-        trianglePointsToDraw.push(ind); 
+        trianglePointsToDraw.push(ind);
     }
 
     return trianglePointsToDraw;
 }
 
 function addIndex(index) {
-    if(drawingMode === gl.POINTS) {
+    if (drawingMode === gl.POINTS) {
         pointIndices.push(index);
     } else if (drawingMode === gl.TRIANGLES && trianglePointsDrawn < 2) {
         pointIndices.push(index);
@@ -165,4 +165,13 @@ function addIndex(index) {
 */
 function setupWebGL(canvas) {
     return WebGLUtils.setupWebGL(canvas);
+}
+
+//https://stackoverflow.com/questions/8922002/attach-event-listener-through-javascript-to-radio-button
+window.EventTarget.prototype.addDelegatedListener = function (type, delegateSelector, listener) {
+    this.addEventListener(type, function (event) {
+        if (event.target && event.target.matches(delegateSelector)) {
+            listener.call(event.target, event)
+        }
+    });
 }
