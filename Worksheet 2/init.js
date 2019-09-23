@@ -4,15 +4,16 @@ let CANVAS_WIDTH = 512;
 let CANVAS_HEIGHT = 512;
 let MAX_VERTICES = 1000;
 let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
-DrawingMode = {
-    "points": 0,
-    "triangles": 1
-}
+// DrawingMode = {
+//     "points": 0,
+//     "triangles": 1
+// }
 
 var gl;
 var numOfPoints = 0;
 var index = 0;
-var drawingMode = DrawingMode.points;
+// var drawingMode = DrawingMode.points;
+var drawingMode;
 var pointIndices = [];
 var triangleIndices = [];
 var trianglePointsDrawn = 0;
@@ -25,17 +26,20 @@ function init() {
     let chooseColorMenu = document.getElementById("choose-color-menu");
     let clearCanvasMenu = document.getElementById("clear-canvas-menu");
     let clearCanvasButton = document.getElementById("clear-canvas-button");
+    let drawPointsButton = document.getElementById("points-mode-button");
+    let drawTrianglesButton = document.getElementById("triangles-mode-button");
     canvas.addEventListener("click", function(ev) {
         var boundingBox = ev.target.getBoundingClientRect();
         mousePosition = vec2(2 * (ev.clientX - boundingBox.left) / canvas.width - 1, 2 * (canvas.height - ev.clientY + boundingBox.top - 1) / canvas.height - 1);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);        
+        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec2'], flatten(mousePosition));
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
         addIndex(index);
         numOfPoints = Math.max(numOfPoints, ++index);
         index %= MAX_VERTICES;
-        render();
+        // render();
+        draw();
     });
     clearCanvasButton.addEventListener("click", function() {
         var bgColor = bgColors[clearCanvasMenu.selectedIndex];
@@ -44,6 +48,12 @@ function init() {
         index = 0;
         render();
     });
+    drawPointsButton.addEventListener("click", function() {
+        drawingMode = gl.POINTS;
+    });
+    drawTrianglesButton.addEventListener("click", function() {
+        drawingMode = gl.TRIANGLES;
+    });
 
 
     //Set up WebGL context
@@ -51,6 +61,7 @@ function init() {
     var bgColor = bgColors[clearCanvasMenu.selectedIndex];
     gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    drawingMode = gl.POINTS; //default
 
     //Initialize shaders
     var program = initShaders(gl, "vertex-shader", "fragment-shader");
@@ -77,19 +88,80 @@ function init() {
 
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.POINTS, 0, numOfPoints);
+    gl.drawArrays(drawingMode, 0, numOfPoints);
+}
+
+function draw() {
+    console.log("draw");
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    var pointIndicesTmp = pointIndices.slice(0);
+    var triangleIndicesTmp = triangleIndices.slice(0);
+
+    while(pointIndicesTmp.length > 0) {
+        var pointsToDraw = getPointsToDraw(pointIndicesTmp);
+        if(pointsToDraw !== -1) {
+            gl.drawArrays(gl.POINTS, pointsToDraw[0], pointsToDraw.length);
+        }
+    }
+
+    while(triangleIndicesTmp.length > 0) {
+        var trianglesToDraw = getTrianglesToDraw(triangleIndicesTmp);
+        if(trianglesToDraw !== -1) {
+            trianglesToDraw = flatten(trianglesToDraw);
+            console.log(flatten(trianglesToDraw));
+            gl.drawArrays(gl.TRIANGLES, trianglesToDraw[0], trianglesToDraw.length);
+        }
+    }
+
+}
+
+function getPointsToDraw(pointInd) {
+    if(pointInd.length === 0) {
+        return -1;
+    }
+
+    var pointsToDraw = [];
+    var ind = pointInd.pop();
+    pointsToDraw.push(ind);
+    while(pointInd.length > 0 && pointInd[0] - ind === 1) {
+        ind = pointInd.pop();
+        pointsToDraw.push(ind);
+    }
+
+    return pointsToDraw;
+}
+
+function getTrianglesToDraw(triangleInd) {
+    if(triangleInd.length === 0) {
+        return -1;
+    }
+
+    var trianglePointsToDraw = [];
+    var ind = triangleInd.pop();
+    trianglePointsToDraw.push(ind);
+    while(triangleInd.length > 0 && triangleInd[0] - ind === 1) {
+        ind = triangleInd.pop();
+        trianglePointsToDraw.push(ind); 
+    }
+    console.log(trianglePointsToDraw);
+
+    return trianglePointsToDraw;
 }
 
 function addIndex(index) {
-    if(drawingMode === DrawingMode.points) {
+    if(drawingMode === gl.POINTS) {
         pointIndices.push(index);
-    } else if (drawingMode === DrawingMode.triangles && trianglePointsDrawn < 2) {
+    } else if (drawingMode === gl.TRIANGLES && trianglePointsDrawn < 2) {
         pointIndices.push(index);
         trianglePointsDrawn++;
-    } else if (drawingMode === DrawingMode.triangles && trianglePointsDrawn === 2) {
-        trianglePointsDrawn.push(index);
-        pointIndices.pop();
-        pointIndices.pop();
+    } else if (drawingMode === gl.TRIANGLES && trianglePointsDrawn === 2) {
+        var triangleIndicesTmp = [];
+        triangleIndicesTmp.push(index);
+        triangleIndicesTmp.push(pointIndices.pop());
+        triangleIndicesTmp.push(pointIndices.pop());
+        triangleIndicesTmp.reverse();
+        triangleIndices.push(triangleIndicesTmp);
         trianglePointsDrawn = 0;
     }
 }
