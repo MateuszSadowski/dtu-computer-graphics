@@ -4,15 +4,10 @@ let CANVAS_WIDTH = 512;
 let CANVAS_HEIGHT = 512;
 let MAX_VERTICES = 1000;
 let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
-// DrawingMode = {
-//     "points": 0,
-//     "triangles": 1
-// }
 
 var gl;
 var numOfPoints = 0;
 var index = 0;
-// var drawingMode = DrawingMode.points;
 var drawingMode;
 var pointIndices = [];
 var triangleIndices = [];
@@ -95,8 +90,8 @@ function draw() {
     console.log("draw");
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    var pointIndicesTmp = pointIndices.slice(0);
-    var triangleIndicesTmp = triangleIndices.slice(0);
+    var pointIndicesTmp = pointIndices.slice(0).reverse();
+    var triangleIndicesTmp = triangleIndices.slice(0).reverse();
 
     while(pointIndicesTmp.length > 0) {
         var pointsToDraw = getPointsToDraw(pointIndicesTmp);
@@ -109,7 +104,6 @@ function draw() {
         var trianglesToDraw = getTrianglesToDraw(triangleIndicesTmp);
         if(trianglesToDraw !== -1) {
             trianglesToDraw = flatten(trianglesToDraw);
-            console.log(flatten(trianglesToDraw));
             gl.drawArrays(gl.TRIANGLES, trianglesToDraw[0], trianglesToDraw.length);
         }
     }
@@ -124,7 +118,7 @@ function getPointsToDraw(pointInd) {
     var pointsToDraw = [];
     var ind = pointInd.pop();
     pointsToDraw.push(ind);
-    while(pointInd.length > 0 && pointInd[0] - ind === 1) {
+    while(pointInd.length > 0 && ind - pointInd[0] === 1) {
         ind = pointInd.pop();
         pointsToDraw.push(ind);
     }
@@ -140,11 +134,10 @@ function getTrianglesToDraw(triangleInd) {
     var trianglePointsToDraw = [];
     var ind = triangleInd.pop();
     trianglePointsToDraw.push(ind);
-    while(triangleInd.length > 0 && triangleInd[0] - ind === 1) {
+    while(triangleInd.length > 0 && ind - triangleInd[0] === 1) {
         ind = triangleInd.pop();
         trianglePointsToDraw.push(ind); 
     }
-    console.log(trianglePointsToDraw);
 
     return trianglePointsToDraw;
 }
