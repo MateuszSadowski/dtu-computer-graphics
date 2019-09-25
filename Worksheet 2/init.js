@@ -2,7 +2,7 @@ onload = init;
 
 let CANVAS_WIDTH = 512;
 let CANVAS_HEIGHT = 512;
-let MAX_VERTICES = 1000;
+let MAX_VERTICES = 100000;
 let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
 
 var gl;
@@ -11,8 +11,11 @@ var index = 0;
 var drawingMode;
 var pointIndices = [];
 var triangleIndices = [];
+var circleIndices = [];
 var trianglePointsDrawn = 0;
 var circlePointsDrawn = 0;
+
+var circleCenterTmp;
 
 function init() {
     //Set up canvas
@@ -27,13 +30,46 @@ function init() {
         mousePosition = vec2(2 * (ev.clientX - boundingBox.left) / canvas.width - 1, 2 * (canvas.height - ev.clientY + boundingBox.top - 1) / canvas.height - 1);
         let zCord = 1 - 2 * (index + 1) / MAX_VERTICES;
         let pointCords = vec3(mousePosition, zCord);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(pointCords));
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
-        addIndex(index);
-        numOfPoints = Math.max(numOfPoints, ++index);
-        index %= MAX_VERTICES;
+
+        if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
+            // var circumferenceIndices = addCircumferencePoints(circleCenterTmp, pointCords);
+            var radius = Math.hypot(circleCenterTmp[0] - pointCords[0], circleCenterTmp[1] - pointCords[1]);
+
+            var vertices = [];
+            var colors = [];
+            var indices = [];
+            var indexTmp = index;
+            vertices.push(circleCenterTmp);
+            for (let i = 0; i <= 360; i++) {
+                var j = i * Math.PI / 180;
+                vertices.push(vec2(
+                    circleCenterTmp[0] + radius * Math.sin(j),
+                    circleCenterTmp[1] + radius * Math.cos(j),
+                    1 - 2 * (index + 1) / MAX_VERTICES
+                ));
+                colors.push(bgColors[chooseColorMenu.selectedIndex]);
+                indices.push(indexTmp++);
+            }
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
+            gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
+            index += vertices.length;
+            addIndex(indices);
+        } else {
+            if (circlePointsDrawn < 1) {
+                circleCenterTmp = pointCords;
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(pointCords));
+            gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
+            addIndex(index);
+            numOfPoints = Math.max(numOfPoints, ++index);
+            index %= MAX_VERTICES;
+        }
+
         // render();
         draw();
     });
@@ -102,6 +138,7 @@ function draw() {
 
     var pointIndicesTmp = pointIndices.slice(0).reverse();
     var triangleIndicesTmp = triangleIndices.slice(0).reverse();
+    var circleIndicesTmp = circleIndices.slice(0).reverse();
 
     while (pointIndicesTmp.length > 0) {
         var pointsToDraw = getPointsToDraw(pointIndicesTmp);
@@ -115,6 +152,14 @@ function draw() {
         if (trianglesToDraw !== -1) {
             trianglesToDraw = flatten(trianglesToDraw);
             gl.drawArrays(gl.TRIANGLES, trianglesToDraw[0], trianglesToDraw.length);
+        }
+    }
+
+    while (circleIndicesTmp.length > 0) {
+        var circlesToDraw = getCirclesToDraw(circleIndicesTmp);
+        if (circlesToDraw !== -1) {
+            circlesToDraw = flatten(circlesToDraw);
+            gl.drawArrays(gl.TRIANGLES_FAN, circlesToDraw[0], circlesToDraw.length);
         }
     }
 
@@ -152,6 +197,22 @@ function getTrianglesToDraw(triangleInd) {
     return trianglePointsToDraw;
 }
 
+function getCirclesToDraw(circleInd) {
+    if (circleInd.length === 0) {
+        return -1;
+    }
+
+    var circlePointsToDraw = [];
+    var ind = circleInd.pop();
+    circlePointsToDraw.push(ind);
+    while (circleInd.length > 0 && ind - circleInd[0] === 1) {
+        ind = circleInd.pop();
+        circlePointsToDraw.push(ind);
+    }
+
+    return circlePointsToDraw;
+}
+
 function addIndex(index) {
     if (drawingMode === gl.POINTS) {
         pointIndices.push(index);
@@ -169,42 +230,41 @@ function addIndex(index) {
     } else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn < 1) {
         pointIndices.push(index);
         circlePointsDrawn++;
-    } else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
-        var circleIndicesTmp = [];
-        var center = pointIndices.pop();
-        circleIndicesTmp.push(center);
-        circleIndicesTmp.push(index);
-        var circumferenceIndices = addCircumferencePoints(center, index);
+    }
+    else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
+        index.unshift(pointIndices.pop());
+        circleIndices.push(index);
+        circlePointsDrawn = 0;
     }
 }
 
-function addCircumferencePoints(center, circumPoint) {
-    var radius = Math.hypot(center[0] - circumPoint[0], center[1] - circumPoint[1]);
+// function addCircumferencePoints(center, circumPoint) {
+//     var radius = Math.hypot(center[0] - circumPoint[0], center[1] - circumPoint[1]);
 
-    var vertices = [];
-    var colors = [];
-    var indices = [];
-    var indexTmp = index;
-    vertices.push(center);
-    for (let i = 0; i <= 360; i++) {
-        var j = i * Math.PI / 180;
-        vertices.push(vec2(
-            radius * Math.sin(j),
-            radius * Math.cos(j),
-            1 - 2 * (index + 1) / MAX_VERTICES
-        ));
-        colors.push(bgColors[chooseColorMenu.selectedIndex]);
-        indices.push(indexTmp++);
-    }
+//     var vertices = [];
+//     var colors = [];
+//     var indices = [];
+//     var indexTmp = index;
+//     vertices.push(center);
+//     for (let i = 0; i <= 360; i++) {
+//         var j = i * Math.PI / 180;
+//         vertices.push(vec2(
+//             radius * Math.sin(j),
+//             radius * Math.cos(j),
+//             1 - 2 * (index + 1) / MAX_VERTICES
+//         ));
+//         colors.push(bgColors[chooseColorMenu.selectedIndex]);
+//         indices.push(indexTmp++);
+//     }
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
-    index += vertices.length;
+//     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+//     gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
+//     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+//     gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
+//     index += vertices.length;
 
-    return indices;
-}
+//     return indices;
+// }
 
 /**
 * @param {Element} canvas. The canvas element to create a context from.
