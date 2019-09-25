@@ -12,6 +12,7 @@ var drawingMode;
 var pointIndices = [];
 var triangleIndices = [];
 var trianglePointsDrawn = 0;
+var circlePointsDrawn = 0;
 
 function init() {
     //Set up canvas
@@ -51,6 +52,8 @@ function init() {
             drawingMode = gl.POINTS;
         } else if (document.querySelector('input[name=drawing-mode]:checked').value === "triangles") {
             drawingMode = gl.TRIANGLES;
+        } else if (document.querySelector('input[name=drawing-mode]:checked').value === "circles") {
+            drawingMode = gl.TRIANGLE_FAN;
         }
     });
 
@@ -84,6 +87,10 @@ function init() {
     gl.enableVertexAttribArray(vColor);
     // vColor = vec3(1, 1, 0);
 }
+
+// function addVertex(position, index) {
+// TODO: Extract code for adding vertices do the buffer
+// }
 
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -159,7 +166,44 @@ function addIndex(index) {
         triangleIndicesTmp.reverse();
         triangleIndices.push(triangleIndicesTmp);
         trianglePointsDrawn = 0;
+    } else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn < 1) {
+        pointIndices.push(index);
+        circlePointsDrawn++;
+    } else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
+        var circleIndicesTmp = [];
+        var center = pointIndices.pop();
+        circleIndicesTmp.push(center);
+        circleIndicesTmp.push(index);
+        var circumferenceIndices = addCircumferencePoints(center, index);
     }
+}
+
+function addCircumferencePoints(center, circumPoint) {
+    var radius = Math.hypot(center[0] - circumPoint[0], center[1] - circumPoint[1]);
+
+    var vertices = [];
+    var colors = [];
+    var indices = [];
+    var indexTmp = index;
+    vertices.push(center);
+    for (let i = 0; i <= 360; i++) {
+        var j = i * Math.PI / 180;
+        vertices.push(vec2(
+            radius * Math.sin(j),
+            radius * Math.cos(j),
+            1 - 2 * (index + 1) / MAX_VERTICES
+        ));
+        colors.push(bgColors[chooseColorMenu.selectedIndex]);
+        indices.push(indexTmp++);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
+    index += vertices.length;
+
+    return indices;
 }
 
 /**
