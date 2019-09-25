@@ -24,8 +24,10 @@ function init() {
     canvas.addEventListener("click", function (ev) {
         var boundingBox = ev.target.getBoundingClientRect();
         mousePosition = vec2(2 * (ev.clientX - boundingBox.left) / canvas.width - 1, 2 * (canvas.height - ev.clientY + boundingBox.top - 1) / canvas.height - 1);
+        let zCord = 1 - 2 * (index + 1) / MAX_VERTICES;
+        let pointCords = vec3(mousePosition, zCord);
         gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec2'], flatten(mousePosition));
+        gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(pointCords));
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
         addIndex(index);
@@ -56,7 +58,8 @@ function init() {
     gl = setupWebGL(canvas);
     var bgColor = bgColors[clearCanvasMenu.selectedIndex];
     gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     drawingMode = gl.POINTS; //default
 
     //Initialize shaders
@@ -68,9 +71,9 @@ function init() {
     //Provide data for shaders
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES * sizeof['vec2'], gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, MAX_VERTICES * sizeof['vec3'], gl.STATIC_DRAW);
     var vPosition = gl.getAttribLocation(program, "a_Position");
-    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     var cBuffer = gl.createBuffer();
@@ -83,12 +86,12 @@ function init() {
 }
 
 function render() {
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawArrays(drawingMode, 0, numOfPoints);
 }
 
 function draw() {
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     var pointIndicesTmp = pointIndices.slice(0).reverse();
     var triangleIndicesTmp = triangleIndices.slice(0).reverse();
