@@ -42,7 +42,7 @@ function init() {
             vertices.push(circleCenterTmp);
             for (let i = 0; i <= 360; i++) {
                 var j = i * Math.PI / 180;
-                vertices.push(vec2(
+                vertices.push(vec3(
                     circleCenterTmp[0] + radius * Math.sin(j),
                     circleCenterTmp[1] + radius * Math.cos(j),
                     1 - 2 * (index + 1) / MAX_VERTICES
@@ -56,7 +56,7 @@ function init() {
             gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
             gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
             index += vertices.length;
-            addIndex(indices);
+            addIndex(indices);  // TODO: only remember the first index of a circle
         } else {
             if (circlePointsDrawn < 1) {
                 circleCenterTmp = pointCords;
@@ -233,7 +233,7 @@ function addIndex(index) {
     }
     else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
         index.unshift(pointIndices.pop());
-        circleIndices.push(index);
+        circleIndices.push(index); //TODO: This is an array inside of an array, use append??
         circlePointsDrawn = 0;
     }
 }
