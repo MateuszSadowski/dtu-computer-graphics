@@ -3,6 +3,7 @@ onload = init;
 let CANVAS_WIDTH = 512;
 let CANVAS_HEIGHT = 512;
 let MAX_VERTICES = 100000;
+let CIRCLE_POINTS = 360;
 let bgColors = [vec3(0, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(1, 1, 1)];
 
 var gl;
@@ -32,31 +33,29 @@ function init() {
         let pointCords = vec3(mousePosition, zCord);
 
         if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
-            // var circumferenceIndices = addCircumferencePoints(circleCenterTmp, pointCords);
             var radius = Math.hypot(circleCenterTmp[0] - pointCords[0], circleCenterTmp[1] - pointCords[1]);
 
             var vertices = [];
             var colors = [];
-            var indices = [];
-            var indexTmp = index;
             vertices.push(circleCenterTmp);
-            for (let i = 0; i <= 360; i++) {
-                var j = i * Math.PI / 180;
+            colors.push(bgColors[chooseColorMenu.selectedIndex]);
+            for (let i = 0; i <= CIRCLE_POINTS; i++) {
+                var j = 2 * i * Math.PI / CIRCLE_POINTS;
                 vertices.push(vec3(
-                    circleCenterTmp[0] + radius * Math.sin(j),
-                    circleCenterTmp[1] + radius * Math.cos(j),
-                    1 - 2 * (index + 1) / MAX_VERTICES
+                    circleCenterTmp[0] + radius * Math.cos(j),
+                    circleCenterTmp[1] + radius * Math.sin(j),
+                    circleCenterTmp[2]
                 ));
                 colors.push(bgColors[chooseColorMenu.selectedIndex]);
-                indices.push(indexTmp++);
             }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
             gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
             gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
             gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
-            index += vertices.length;
-            addIndex(indices);  // TODO: only remember the first index of a circle
+            index += CIRCLE_POINTS + 2;
+            index %= MAX_VERTICES;
+            addIndex(index);
         } else {
             if (circlePointsDrawn < 1) {
                 circleCenterTmp = pointCords;
@@ -66,11 +65,10 @@ function init() {
             gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
             gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(bgColors[chooseColorMenu.selectedIndex]));
             addIndex(index);
-            numOfPoints = Math.max(numOfPoints, ++index);
+            numOfPoints = Math.max(numOfPoints, ++index); //TODO: numOfPoints obsolete
             index %= MAX_VERTICES;
         }
 
-        // render();
         draw();
     });
     clearCanvasButton.addEventListener("click", function () {
@@ -121,7 +119,6 @@ function init() {
     var vColor = gl.getAttribLocation(program, "a_Color");
     gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
-    // vColor = vec3(1, 1, 0);
 }
 
 // function addVertex(position, index) {
@@ -159,7 +156,7 @@ function draw() {
         var circlesToDraw = getCirclesToDraw(circleIndicesTmp);
         if (circlesToDraw !== -1) {
             circlesToDraw = flatten(circlesToDraw);
-            gl.drawArrays(gl.TRIANGLES_FAN, circlesToDraw[0], circlesToDraw.length);
+            gl.drawArrays(gl.TRIANGLE_FAN, circlesToDraw[0], CIRCLE_POINTS + 3);
         }
     }
 
@@ -205,7 +202,7 @@ function getCirclesToDraw(circleInd) {
     var circlePointsToDraw = [];
     var ind = circleInd.pop();
     circlePointsToDraw.push(ind);
-    while (circleInd.length > 0 && ind - circleInd[0] === 1) {
+    while (circleInd.length > 0 && ind - circleInd[0] === CIRCLE_POINTS) {
         ind = circleInd.pop();
         circlePointsToDraw.push(ind);
     }
@@ -232,39 +229,10 @@ function addIndex(index) {
         circlePointsDrawn++;
     }
     else if (drawingMode === gl.TRIANGLE_FAN && circlePointsDrawn === 1) {
-        index.unshift(pointIndices.pop());
-        circleIndices.push(index); //TODO: This is an array inside of an array, use append??
+        circleIndices.push(pointIndices.pop());
         circlePointsDrawn = 0;
     }
 }
-
-// function addCircumferencePoints(center, circumPoint) {
-//     var radius = Math.hypot(center[0] - circumPoint[0], center[1] - circumPoint[1]);
-
-//     var vertices = [];
-//     var colors = [];
-//     var indices = [];
-//     var indexTmp = index;
-//     vertices.push(center);
-//     for (let i = 0; i <= 360; i++) {
-//         var j = i * Math.PI / 180;
-//         vertices.push(vec2(
-//             radius * Math.sin(j),
-//             radius * Math.cos(j),
-//             1 - 2 * (index + 1) / MAX_VERTICES
-//         ));
-//         colors.push(bgColors[chooseColorMenu.selectedIndex]);
-//         indices.push(indexTmp++);
-//     }
-
-//     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-//     gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(vertices));
-//     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-//     gl.bufferSubData(gl.ARRAY_BUFFER, index * sizeof['vec3'], flatten(colors));
-//     index += vertices.length;
-
-//     return indices;
-// }
 
 /**
 * @param {Element} canvas. The canvas element to create a context from.
