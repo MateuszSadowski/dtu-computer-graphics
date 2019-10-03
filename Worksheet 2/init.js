@@ -131,6 +131,7 @@ function render() {
 }
 
 function draw() {
+    console.log("draw");
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     var pointIndicesTmp = pointIndices.slice(0).reverse();
@@ -153,10 +154,12 @@ function draw() {
     }
 
     while (circleIndicesTmp.length > 0) {
+        var i = 1;
         var circlesToDraw = getCirclesToDraw(circleIndicesTmp);
         if (circlesToDraw !== -1) {
             circlesToDraw = flatten(circlesToDraw);
-            gl.drawArrays(gl.TRIANGLE_FAN, circlesToDraw[0], CIRCLE_POINTS + 3);
+            console.log("draw circles " + i++);
+            gl.drawArrays(gl.TRIANGLE_FAN, circlesToDraw[0], circlesToDraw.length * (CIRCLE_POINTS + 3));
         }
     }
 
@@ -202,7 +205,7 @@ function getCirclesToDraw(circleInd) {
     var circlePointsToDraw = [];
     var ind = circleInd.pop();
     circlePointsToDraw.push(ind);
-    while (circleInd.length > 0 && ind - circleInd[0] === CIRCLE_POINTS) {
+    while (circleInd.length > 0 && circleInd[circleInd.length - 1] - ind === CIRCLE_POINTS + 3) {
         ind = circleInd.pop();
         circlePointsToDraw.push(ind);
     }
