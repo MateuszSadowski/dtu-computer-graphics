@@ -103,8 +103,6 @@ function init() {
     var program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
-    //Set up arrays of indices for different drawing mode
-
     //Provide data for shaders
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -158,8 +156,11 @@ function draw() {
         var circlesToDraw = getCirclesToDraw(circleIndicesTmp);
         if (circlesToDraw !== -1) {
             circlesToDraw = flatten(circlesToDraw);
-            console.log("draw circles " + i++);
             gl.drawArrays(gl.TRIANGLE_FAN, circlesToDraw[0], circlesToDraw.length * (CIRCLE_POINTS + 3));
+            // TODO: Draw all circles in one draw call
+            // var iBuffer = gl.createBuffer();
+            // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+            // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(circlesToDraw), gl.STATIC_DRAW);
         }
     }
 
@@ -205,7 +206,8 @@ function getCirclesToDraw(circleInd) {
     var circlePointsToDraw = [];
     var ind = circleInd.pop();
     circlePointsToDraw.push(ind);
-    while (circleInd.length > 0 && circleInd[circleInd.length - 1] - ind === CIRCLE_POINTS + 3) {
+    // TODO: Draw all circles in one draw call
+    while (0 && circleInd.length > 0 && circleInd[circleInd.length - 1] - ind === CIRCLE_POINTS + 3) {
         ind = circleInd.pop();
         circlePointsToDraw.push(ind);
     }
