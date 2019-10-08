@@ -39,21 +39,18 @@ function init(){
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 0, 0);
 
-	// translate
-	// var translateMatrix = translate(vec3(0.5, 0.5, 0));
-	// for(let i = 0; i < vertices.length; i++) {
-	// 	vertices[i] = mult(translateMatrix, vertices[i]);
-	// }
+	var pMat = ortho(-2, 2, -2, 2, -2, 2);
+	var vMat = lookAt(eye, at, up);
+	var mMat = translate(vec3(0, 0, 0));
+	
+	// rotate cube into isometric view
+	mMat = mult(mMat, rotateX(35.26));
+	mMat = mult(mMat, rotateY(45));
 
-	// isometric view
-	var orthoMatrix = ortho(-2, 2, -2, 2, 2, -2);
-	var viewMatrix = lookAt(eye, at, up);
-	var modelMatrix = translate(vec3(0, 0, 0));
-	modelMatrix = mult(modelMatrix, rotateX(35.26));
-	modelMatrix = mult(modelMatrix, rotateY(45));
-	var mvp = mult(orthoMatrix, mult(viewMatrix, modelMatrix));
+	var mvpMat = mult(pMat, mult(vMat, mMat));
+
 	var MVP = gl.getUniformLocation(program, "mvp");
-	gl.uniformMatrix4fv(MVP, false, flatten(mvp));
+	gl.uniformMatrix4fv(MVP, false, flatten(mvpMat));
 
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
