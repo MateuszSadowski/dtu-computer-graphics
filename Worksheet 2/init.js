@@ -76,7 +76,9 @@ function init() {
         gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1);
         numOfPoints = 0;
         index = 0;
-        //TODO: fix that the vertex buffer is not emptied on clearing canvas
+        pointIndices = [];
+        triangleIndices = [];
+        circleIndices = [];
         render();
     });
 
