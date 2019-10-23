@@ -14,9 +14,10 @@ function init() {
 
 	var program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
+	gl.enable(gl.DEPTH_TEST);
 
 	var translation = [0, 0, 0];
-	var rotation = [0, 0, 0];
+	var rotation = [128, 140, 26];
 	var scaleValues = [1, 1, 1];
 
 	// setup UI
@@ -56,44 +57,6 @@ function init() {
 		4, 7, 6,
 		4, 6, 5
 	];
-	// var cube = [
-	// 	vec4(-0.5, -0.5, 0.5, 1.0),
-	// 	vec4(-0.5, 0.5, 0.5, 1.0),
-	// 	vec4(0.5, 0.5, 0.5, 1.0),
-	// 	vec4(0.5, -0.5, 0.5, 1.0),
-	// 	vec4(-0.5, -0.5, -0.5, 1.0),
-	// 	vec4(-0.5, 0.5, -0.5, 1.0),
-	// 	vec4(0.5, 0.5, -0.5, 1.0),
-	// 	vec4(0.5, -0.5, -0.5, 1.0)
-	// ];
-	// var indices = [
-	// 	1, 0, 3,
-	// 	1, 2, 0,
-	// 	2, 5, 0,
-	// 	0, 4, 3,
-	// 	0, 4, 5,
-	// 	4, 5, 7,
-	// 	5, 7, 6,
-	// 	5, 6, 2,
-	// 	4, 7, 3,
-	// 	3, 6, 7,
-	// 	3, 6, 2,
-	// 	3, 2, 1
-	// ];
-	// var indices = [
-	// 	1, 0, 3,
-	// 	3, 2, 1,
-	// 	2, 3, 7,
-	// 	7, 6, 2,
-	// 	3, 0, 4,
-	// 	4, 7, 3,
-	// 	6, 5, 1,
-	// 	1, 2, 6,
-	// 	4, 5, 6,
-	// 	6, 7, 4,
-	// 	5, 4, 0,
-	// 	0, 1, 5
-	// ];
 
 	function updatePosition(index) {
 		return function (event, ui) {
@@ -119,21 +82,23 @@ function init() {
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
-	var pMat = ortho(-2, 2, -2, 2, -30, 30);
+	var pMat = ortho(-2, 2, -2, 2, -50, 50);
+	// TODO: Enable perspective
 	// var pMat = perspective(45, 1, 0, 20);
 	var vMat = lookAt(eye, at, up);
 
 	function render(numPoints, offset) {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
-		gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		// compute matrices
-		var mMat = translate(translation[0], translation[1], translation[2]);
-		mMat = mult(mMat, rotateX(rotation[0]));
-		mMat = mult(mMat, rotateY(rotation[1]));
-		mMat = mult(mMat, rotateZ(rotation[2]));
-		// TODO: add scale
-		// mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
+		// last specified transformation is first to be applied
+		var mMat = mat4();
+		mMat = mult(mMat, translate(translation[0], translation[1], translation[2]));
+		mMat = mult(mMat, rotate(rotation[0], vec3(1, 0, 0)));
+		mMat = mult(mMat, rotate(rotation[1], vec3(0, 1, 0)));
+		mMat = mult(mMat, rotate(rotation[2], vec3(0, 0, 1)));
+		mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
 		var mvpMat = mult(pMat, mult(vMat, mMat));
 
 		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
