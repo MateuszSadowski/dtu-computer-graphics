@@ -32,6 +32,13 @@ function init() {
 	webglLessonsUI.setupSlider("#scaleY", { value: scaleValues[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleZ", { value: scaleValues[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2 });
 
+	// vertices for a sphere
+	var va = vec4(0.0, 0.0, -1.0, 1);
+	var vb = vec4(0.0, 0.942809, 0.333333, 1);
+	var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+	var vd = vec4(0.816497, -0.471405, 0.333333, 1);
+	var tetrahedron = [];
+
 	// vertices for a cube
 	var cube = [
 		vec4(1.0, 1.0, 1.0, 1.0),
@@ -43,20 +50,8 @@ function init() {
 		vec4(-1.0, 1.0, -1.0, 1.0),
 		vec4(-1.0, -1.0, -1.0, 1.0)
 	];
-	var indices = [
-		0, 1, 2,
-		0, 2, 3,
-		0, 3, 4,
-		0, 4, 5,
-		0, 5, 6,
-		0, 6, 1,
-		1, 6, 7,
-		1, 7, 2,
-		7, 4, 3,
-		7, 3, 2,
-		4, 7, 6,
-		4, 6, 5
-	];
+	var indices = [];
+	var index = 0;
 
 	function updatePosition(index) {
 		return function (event, ui) {
@@ -87,6 +82,37 @@ function init() {
 	// var pMat = perspective(45, 1, 0, 20);
 	var vMat = lookAt(eye, at, up);
 
+	function makeTetrahedron(a, b, c, d, n) {
+		divideTriangle(a, b, c, n);
+		divideTriangle(d, c, b, n);
+		divideTriangle(a, d, b, n);
+		divideTriangle(a, c, d, n);
+	}
+
+	function divideTriangle(a, b, c, count) {
+		if (count > 0) {
+			var ab = normalize(mix(a, b, 0.5), true);
+			var ac = normalize(mix(a, c, 0.5), true);
+			var bc = normalize(mix(b, c, 0.5), true);
+			divideTriangle(a, ab, ac, count - 1);
+			divideTriangle(ab, b, bc, count - 1);
+			divideTriangle(bc, c, ac, count - 1);
+			divideTriangle(ab, bc, ac, count - 1);
+		}
+		else {
+			triangle(a, b, c);
+		}
+	}
+
+	function triangle(a, b, c) {
+		tetrahedron.push(a);
+		indices.push(index++);
+		tetrahedron.push(b);
+		indices.push(index++);
+		tetrahedron.push(c);
+		indices.push(index++);
+	}
+
 	function render(numPoints, offset) {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -103,13 +129,17 @@ function init() {
 
 		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
 		gl.uniformMatrix4fv(uMatrix, false, flatten(mvpMat));
-
-		gl.drawElements(gl.TRIANGLES, numPoints, gl.UNSIGNED_BYTE, offset);
+		console.log(tetrahedron);
+		console.log(indices);
+		// gl.drawElements(gl.TRIANGLES, numPoints, gl.UNSIGNED_BYTE, offset);
+		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length)
 	}
+
+	makeTetrahedron(va, vb, vc, vd, 5);
 
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(cube), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
 
 	var vPosition = gl.getAttribLocation(program, "a_Position");
 	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
@@ -120,24 +150,24 @@ function init() {
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 
 	// colors
-	var vertexColors = [
-		[0.0, 0.0, 0.0, 1.0], // black
-		[1.0, 0.0, 0.0, 1.0], // red
-		[1.0, 1.0, 0.0, 1.0], // yellow
-		[0.0, 1.0, 0.0, 1.0], // green
-		[0.0, 0.0, 1.0, 1.0], // blue
-		[1.0, 0.0, 1.0, 1.0], // magenta
-		[1.0, 1.0, 1.0, 1.0], // white
-		[0.0, 1.0, 1.0, 1.0] // cyan
-	];
+	// var vertexColors = [
+	// 	[0.0, 0.0, 0.0, 1.0], // black
+	// 	[1.0, 0.0, 0.0, 1.0], // red
+	// 	[1.0, 1.0, 0.0, 1.0], // yellow
+	// 	[0.0, 1.0, 0.0, 1.0], // green
+	// 	[0.0, 0.0, 1.0, 1.0], // blue
+	// 	[1.0, 0.0, 1.0, 1.0], // magenta
+	// 	[1.0, 1.0, 1.0, 1.0], // white
+	// 	[0.0, 1.0, 1.0, 1.0] // cyan
+	// ];
 
-	var cBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
+	// var cBuffer = gl.createBuffer();
+	// gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+	// gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
 
-	var aColor = gl.getAttribLocation(program, "a_Color");
-	gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(aColor);
+	// var aColor = gl.getAttribLocation(program, "a_Color");
+	// gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
+	// gl.enableVertexAttribArray(aColor);
 
 	render(indices.length, 0);
 }
