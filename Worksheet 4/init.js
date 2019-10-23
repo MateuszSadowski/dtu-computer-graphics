@@ -19,6 +19,7 @@ function init() {
 	var translation = [0, 0, 0];
 	var rotation = [128, 140, 26];
 	var scaleValues = [1, 1, 1];
+	var numOfSubdivisions = 0;
 
 	// setup UI
 	// https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
@@ -31,6 +32,22 @@ function init() {
 	webglLessonsUI.setupSlider("#scaleX", { value: scaleValues[0], slide: updateScale(0), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleY", { value: scaleValues[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleZ", { value: scaleValues[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2 });
+	// buttons
+	var decreaseSubdivisionButton = document.getElementById("dec-sub");
+	decreaseSubdivisionButton.addEventListener("click", () => {
+		if (numOfSubdivisions > 0) {
+			numOfSubdivisions--;
+			render();
+		}
+	})
+	var increaseSubdivisionButton = document.getElementById("inc-sub");
+	increaseSubdivisionButton.addEventListener("click", () => {
+		if (numOfSubdivisions < 9) {
+			numOfSubdivisions++;
+		}
+		render();
+	})
+
 
 	// vertices for a sphere
 	var va = vec4(0.0, 0.0, -1.0, 1);
@@ -83,6 +100,7 @@ function init() {
 	var vMat = lookAt(eye, at, up);
 
 	function makeTetrahedron(a, b, c, d, n) {
+		tetrahedron = [];
 		divideTriangle(a, b, c, n);
 		divideTriangle(d, c, b, n);
 		divideTriangle(a, d, b, n);
@@ -114,6 +132,10 @@ function init() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+		makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
+
 		// compute matrices
 		// last specified transformation is first to be applied
 		var mMat = mat4();
@@ -127,14 +149,12 @@ function init() {
 		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
 		gl.uniformMatrix4fv(uMatrix, false, flatten(mvpMat));
 		// gl.drawElements(gl.TRIANGLES, numPoints, gl.UNSIGNED_BYTE, offset);
-		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length)
+		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 	}
-
-	makeTetrahedron(va, vb, vc, vd, 5);
 
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
+	// gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
 
 	var vPosition = gl.getAttribLocation(program, "a_Position");
 	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
