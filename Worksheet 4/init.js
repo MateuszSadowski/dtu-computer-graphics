@@ -40,37 +40,37 @@ function init() {
 	var tetrahedron = [];
 
 	// vertices for a cube
-	var cube = [
-		vec4(1.0, 1.0, 1.0, 1.0),
-		vec4(-1.0, 1.0, 1.0, 1.0),
-		vec4(-1.0, -1.0, 1.0, 1.0),
-		vec4(1.0, -1.0, 1.0, 1.0),
-		vec4(1.0, -1.0, -1.0, 1.0),
-		vec4(1.0, 1.0, -1.0, 1.0),
-		vec4(-1.0, 1.0, -1.0, 1.0),
-		vec4(-1.0, -1.0, -1.0, 1.0)
-	];
-	var indices = [];
-	var index = 0;
+	// var cube = [
+	// 	vec4(1.0, 1.0, 1.0, 1.0),
+	// 	vec4(-1.0, 1.0, 1.0, 1.0),
+	// 	vec4(-1.0, -1.0, 1.0, 1.0),
+	// 	vec4(1.0, -1.0, 1.0, 1.0),
+	// 	vec4(1.0, -1.0, -1.0, 1.0),
+	// 	vec4(1.0, 1.0, -1.0, 1.0),
+	// 	vec4(-1.0, 1.0, -1.0, 1.0),
+	// 	vec4(-1.0, -1.0, -1.0, 1.0)
+	// ];
+	// var indices = [];
+	// var index = 0;
 
 	function updatePosition(index) {
 		return function (event, ui) {
 			translation[index] = ui.value / TRANSLATION_SCALE_FACTOR;
-			render(indices.length, 0);
+			render();
 		};
 	}
 
 	function updateRotation(index) {
 		return function (event, ui) {
 			rotation[index] = ui.value;
-			render(indices.length, 0);
+			render();
 		};
 	}
 
 	function updateScale(index) {
 		return function (event, ui) {
 			scaleValues[index] = ui.value;
-			render(indices.length, 0);
+			render();
 		};
 	}
 	var eye = vec3(0, 20, 20);
@@ -106,14 +106,11 @@ function init() {
 
 	function triangle(a, b, c) {
 		tetrahedron.push(a);
-		indices.push(index++);
 		tetrahedron.push(b);
-		indices.push(index++);
 		tetrahedron.push(c);
-		indices.push(index++);
 	}
 
-	function render(numPoints, offset) {
+	function render() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -129,8 +126,6 @@ function init() {
 
 		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
 		gl.uniformMatrix4fv(uMatrix, false, flatten(mvpMat));
-		console.log(tetrahedron);
-		console.log(indices);
 		// gl.drawElements(gl.TRIANGLES, numPoints, gl.UNSIGNED_BYTE, offset);
 		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length)
 	}
@@ -145,9 +140,9 @@ function init() {
 	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(vPosition);
 
-	var iBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
+	// var iBuffer = gl.createBuffer();
+	// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+	// gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 
 	// colors
 	// var vertexColors = [
@@ -169,7 +164,7 @@ function init() {
 	// gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
 	// gl.enableVertexAttribArray(aColor);
 
-	render(indices.length, 0);
+	render();
 }
 
 /**
