@@ -92,13 +92,12 @@ function init() {
 			render();
 		};
 	}
-	var eye = vec3(0, 20, 20);
+	var eye = vec3(0, 0, 3.5);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
-	var pMat = ortho(-2, 2, -2, 2, -50, 50);
-	// TODO: Enable perspective
-	// var pMat = perspective(45, 1, 0, 20);
+	// var pMat = ortho(-2, 2, -2, 2, -50, 50);
+	var pMat = perspective(45, 1, 0.1, 10);
 	var vMat = lookAt(eye, at, up);
 
 	function makeTetrahedron(a, b, c, d, n) {
