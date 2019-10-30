@@ -15,6 +15,7 @@ function init() {
 	var program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
 	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.CULL_FACE);
 
 	var translation = [0, 0, 0];
 	var rotation = [128, 140, 26];
