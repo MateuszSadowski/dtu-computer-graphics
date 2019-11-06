@@ -98,11 +98,13 @@ function init() {
 	var tetrahedron = [];
 
 	// light source
-	var lightDirection = vec4(0.0, -1.0, -1.0, 0.0);
+	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
-	// var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-	// var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
-	// var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+	var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	var materialDiffuse = 1.0;
+	var materialSpecular = 1.0;
+	var materialShininess = 100.0;
+	//TODO: Add ambient coefficient
 
 	// upload values to shader
 	var vBuffer = gl.createBuffer();
@@ -117,6 +119,18 @@ function init() {
 
 	var uLightEmission = gl.getUniformLocation(program, "u_LightEmission");
 	gl.uniform4fv(uLightEmission, lightEmission);
+
+	var uLightAmbinet = gl.getUniformLocation(program, "u_LightAmbient");
+	gl.uniform4fv(uLightAmbinet, lightAmbient);
+
+	var uMaterialDiffuse = gl.getUniformLocation(program, "u_MaterialDiffuse");
+	gl.uniform1f(uMaterialDiffuse, materialDiffuse);
+
+	var uMaterialSpecular = gl.getUniformLocation(program, "u_MaterialSpecular");
+	gl.uniform1f(uMaterialSpecular, materialSpecular);
+	
+	var uMaterialShininess = gl.getUniformLocation(program, "u_MaterialShininess");
+	gl.uniform1f(uMaterialShininess, materialShininess);
 
 	// === setup methods ===
 	function orbit() {
@@ -186,10 +200,19 @@ function init() {
 		mMat = mult(mMat, rotate(rotation[1], vec3(0, 1, 0)));
 		mMat = mult(mMat, rotate(rotation[2], vec3(0, 0, 1)));
 		mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
-		var mvpMat = mult(pMat, mult(vMat, mMat));
+		var mvMat = mult(vMat, mMat);
+		var mvpMat = mult(pMat, mvMat);
 
-		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
-		gl.uniformMatrix4fv(uMatrix, false, flatten(mvpMat));
+		var N = normalMatrix(mvMat, false);
+		var uNMatrix = gl.getUniformLocation(program, "u_NMatrix");
+		gl.uniformMatrix3fv(uNMatrix, false, flatten(N));
+
+		var umvMatrix = gl.getUniformLocation(program, "u_mvMatrix");
+		gl.uniformMatrix4fv(umvMatrix, false, flatten(mvMat));
+
+		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
+		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
+
 		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 	}
 

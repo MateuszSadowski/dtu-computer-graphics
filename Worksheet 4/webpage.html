@@ -36,19 +36,33 @@
     <script id="vertex-shader" type="x-shader/x-vertex">
         attribute vec4 a_Position;
         attribute vec4 a_Color;
-        uniform mat4 u_Matrix;
+
+        uniform mat4 u_mvpMatrix;
+        uniform mat4 u_mvMatrix;
+        uniform mat3 u_NMatrix;
         uniform vec4 u_LightPosition;
         uniform vec4 u_LightEmission;
+        uniform vec4 u_LightAmbiance;
+        uniform float u_MaterialDiffuse;
+        uniform float u_MaterialSpecular;
+        uniform float u_MaterialShininess;
+
         varying vec4 v_Color;
         varying vec4 v_Position;
         varying vec3 v_Normal;
-        varying vec3 v_DirectionTowardLight;
         void main() {
-            v_Position = u_Matrix * a_Position;
-            v_DirectionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
-            v_Normal = normalize(a_Position.xyz);
-            v_Color = vec4(1, 0, 0, 1) * u_LightEmission * dot(v_Normal, v_DirectionTowardLight);
+            v_Position = u_mvpMatrix * a_Position;
+
+            vec3 v_Normal = normalize(a_Position.xyz);
+            vec3 normalEyeSpace = normalize(u_NMatrix * v_Normal);
+            vec3 directionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
+            vec4 positionOnSphere = u_mvMatrix * a_Position;
+            vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
+            vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
+
+            v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
             v_Color.a = 1.0;
+
             gl_Position = v_Position;
         }
     </script>
