@@ -2,9 +2,10 @@
 
 onload = init;
 
+let ORBIT_STEP = 0.01;
+//TODO: remove these constants
 let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 10;
-let ORBIT_STEP = 0.01;
 
 function init() {
 	var canvas = document.getElementById("c");
@@ -20,6 +21,7 @@ function init() {
 	gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
+	// === setup UI ===
 	var translation = [0, 0, 0];
 	var rotation = [128, 140, 26];
 	var scaleValues = [1, 1, 1];
@@ -28,7 +30,6 @@ function init() {
 	var orbitAngle = 0;
 	var shouldOrbit = 0;
 
-	// setup UI
 	// https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
 	webglLessonsUI.setupSlider("#x", { value: translation[0], slide: updatePosition(0), min: -gl.canvas.width, max: gl.canvas.width });
 	webglLessonsUI.setupSlider("#y", { value: translation[1], slide: updatePosition(1), min: -gl.canvas.height, max: gl.canvas.height });
@@ -61,30 +62,6 @@ function init() {
 		orbit();
 	})
 
-
-	// vertices for a sphere
-	var va = vec4(0.0, 0.0, 1.0, 1);
-	var vb = vec4(0.0, 0.942809, -0.333333, 1);
-	var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
-	var tetrahedron = [];
-
-	// light source
-	var lightDirection = vec4(0.0, -1.0, -1.0, 0.0);
-	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
-	// var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-	// var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
-	// var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-
-	// var vLightDirection = gl.getAttribLocation(program, "a_LightPosition");
-	// gl.vertexAttribPointer(vLightDirection, 4, gl.FLOAT, false, 0, 0);
-
-	var uLightPosition = gl.getUniformLocation(program, "u_LightPosition");
-	gl.uniform4fv(uLightPosition, lightDirection);
-
-	var uLightEmission = gl.getUniformLocation(program, "u_LightEmission");
-	gl.uniform4fv(uLightEmission, lightEmission);
-
 	function updatePosition(index) {
 		return function (event, ui) {
 			translation[index] = ui.value / TRANSLATION_SCALE_FACTOR;
@@ -113,6 +90,35 @@ function init() {
 		};
 	}
 
+	// vertices for sphere
+	var va = vec4(0.0, 0.0, 1.0, 1);
+	var vb = vec4(0.0, 0.942809, -0.333333, 1);
+	var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
+	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
+	var tetrahedron = [];
+
+	// light source
+	var lightDirection = vec4(0.0, -1.0, -1.0, 0.0);
+	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
+	// var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	// var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
+	// var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
+	// upload values to shader
+	var vBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+
+	var vPosition = gl.getAttribLocation(program, "a_Position");
+	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vPosition);
+
+	var uLightPosition = gl.getUniformLocation(program, "u_LightPosition");
+	gl.uniform4fv(uLightPosition, lightDirection);
+
+	var uLightEmission = gl.getUniformLocation(program, "u_LightEmission");
+	gl.uniform4fv(uLightEmission, lightEmission);
+
+	// === setup methods ===
 	function orbit() {
 		if(shouldOrbit) {	
 			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
@@ -187,13 +193,7 @@ function init() {
 		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 	}
 
-	var vBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-
-	var vPosition = gl.getAttribLocation(program, "a_Position");
-	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(vPosition);
-
+	// === start program ===
 	render();
 }
 
