@@ -39,6 +39,7 @@ function init() {
 	webglLessonsUI.setupSlider("#scaleX", { value: scaleValues[0], slide: updateScale(0), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleY", { value: scaleValues[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleZ", { value: scaleValues[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2 });
+	webglLessonsUI.setupSlider("#orbitR", { value: orbitRadius, slide: updateOrbitRadius(), min: 0, max: 5, step: 0.01, precision: 2 });
 	// buttons
 	var decreaseSubdivisionButton = document.getElementById("dec-sub");
 	decreaseSubdivisionButton.addEventListener("click", () => {
@@ -101,6 +102,13 @@ function init() {
 	function updateScale(index) {
 		return function (event, ui) {
 			scaleValues[index] = ui.value;
+			render();
+		};
+	}
+
+	function updateOrbitRadius() {
+		return function (event, ui) {
+			orbitRadius = ui.value;
 			render();
 		};
 	}
