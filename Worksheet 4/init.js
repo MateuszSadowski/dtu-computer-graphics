@@ -17,11 +17,12 @@ function init() {
 	gl.vBuffer = null;
 	gl.enable(gl.DEPTH_TEST);
 	gl.enable(gl.CULL_FACE);
+	// gl.frontFace(gl.CW);
 
 	var translation = [0, 0, 0];
 	var rotation = [128, 140, 26];
 	var scaleValues = [1, 1, 1];
-	var numOfSubdivisions = 0;
+	var numOfSubdivisions = 4;
 
 	// setup UI
 	// https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
@@ -58,19 +59,21 @@ function init() {
 	var vd = vec4(0.816497, -0.471405, 0.333333, 1);
 	var tetrahedron = [];
 
-	// vertices for a cube
-	// var cube = [
-	// 	vec4(1.0, 1.0, 1.0, 1.0),
-	// 	vec4(-1.0, 1.0, 1.0, 1.0),
-	// 	vec4(-1.0, -1.0, 1.0, 1.0),
-	// 	vec4(1.0, -1.0, 1.0, 1.0),
-	// 	vec4(1.0, -1.0, -1.0, 1.0),
-	// 	vec4(1.0, 1.0, -1.0, 1.0),
-	// 	vec4(-1.0, 1.0, -1.0, 1.0),
-	// 	vec4(-1.0, -1.0, -1.0, 1.0)
-	// ];
-	// var indices = [];
-	// var index = 0;
+	// light source
+	var lightDirection = vec4(-0.5, -0.5, -1.0, 0.0);
+	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
+	// var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	// var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
+	// var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
+	// var vLightDirection = gl.getAttribLocation(program, "a_LightPosition");
+	// gl.vertexAttribPointer(vLightDirection, 4, gl.FLOAT, false, 0, 0);
+
+	var uLightPosition = gl.getUniformLocation(program, "u_LightPosition");
+	gl.uniform4fv(uLightPosition, lightDirection);
+
+	var uLightEmission = gl.getUniformLocation(program, "u_LightEmission");
+	gl.uniform4fv(uLightEmission, lightEmission);
 
 	function updatePosition(index) {
 		return function (event, ui) {
@@ -151,41 +154,15 @@ function init() {
 
 		var uMatrix = gl.getUniformLocation(program, "u_Matrix");
 		gl.uniformMatrix4fv(uMatrix, false, flatten(mvpMat));
-		// gl.drawElements(gl.TRIANGLES, numPoints, gl.UNSIGNED_BYTE, offset);
 		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 	}
 
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-	// gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
 
 	var vPosition = gl.getAttribLocation(program, "a_Position");
 	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(vPosition);
-
-	// var iBuffer = gl.createBuffer();
-	// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-	// gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
-
-	// colors
-	// var vertexColors = [
-	// 	[0.0, 0.0, 0.0, 1.0], // black
-	// 	[1.0, 0.0, 0.0, 1.0], // red
-	// 	[1.0, 1.0, 0.0, 1.0], // yellow
-	// 	[0.0, 1.0, 0.0, 1.0], // green
-	// 	[0.0, 0.0, 1.0, 1.0], // blue
-	// 	[1.0, 0.0, 1.0, 1.0], // magenta
-	// 	[1.0, 1.0, 1.0, 1.0], // white
-	// 	[0.0, 1.0, 1.0, 1.0] // cyan
-	// ];
-
-	// var cBuffer = gl.createBuffer();
-	// gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-	// gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
-
-	// var aColor = gl.getAttribLocation(program, "a_Color");
-	// gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
-	// gl.enableVertexAttribArray(aColor);
 
 	render();
 }
