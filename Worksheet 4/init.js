@@ -4,6 +4,7 @@ onload = init;
 
 let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 10;
+let ORBIT_STEP = 0.01;
 
 function init() {
 	var canvas = document.getElementById("c");
@@ -23,6 +24,9 @@ function init() {
 	var rotation = [128, 140, 26];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
+	var orbitRadius = 4.5;
+	var orbitAngle = 0;
+	var shouldOrbit = 0;
 
 	// setup UI
 	// https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
@@ -50,17 +54,22 @@ function init() {
 		}
 		render();
 	})
+	var toggleOrbitButton = document.getElementById("orbit");
+	toggleOrbitButton.addEventListener("click", () => {
+		shouldOrbit = (shouldOrbit + 1) % 2;
+		orbit();
+	})
 
 
 	// vertices for a sphere
-	var va = vec4(0.0, 0.0, -1.0, 1);
-	var vb = vec4(0.0, 0.942809, 0.333333, 1);
-	var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-	var vd = vec4(0.816497, -0.471405, 0.333333, 1);
+	var va = vec4(0.0, 0.0, 1.0, 1);
+	var vb = vec4(0.0, 0.942809, -0.333333, 1);
+	var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
+	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 	var tetrahedron = [];
 
 	// light source
-	var lightDirection = vec4(-0.5, -0.5, -1.0, 0.0);
+	var lightDirection = vec4(0.0, -1.0, -1.0, 0.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
 	// var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 	// var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
@@ -95,7 +104,20 @@ function init() {
 			render();
 		};
 	}
-	var eye = vec3(0, 0, 3.5);
+
+	function orbit() {
+		if(shouldOrbit) {	
+			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+			vMat = lookAt(eye, at, up);
+			render();
+			orbitAngle += ORBIT_STEP;
+			requestAnimationFrame(orbit);
+		} else {
+			render();
+		}
+	}
+
+	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 

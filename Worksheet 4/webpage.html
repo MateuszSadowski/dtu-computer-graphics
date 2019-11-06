@@ -20,6 +20,7 @@
         <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-top: 10px">
             <button id="inc-sub" style="padding: 5px; margin: 5px">Increase subdivision</button>
             <button id="dec-sub" style="padding: 5px; margin: 5px">Decrease subdivision</button>
+            <button id="orbit" style="padding: 5px; margin: 5px">Orbit on/off</button>
         </div>
     </div>
 
@@ -44,8 +45,9 @@
         void main() {
             v_Position = u_Matrix * a_Position;
             v_DirectionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
-            v_Normal = normalize(v_Position.xyz);
-            v_Color = (0.5 * a_Position + 0.5) * u_LightEmission * dot(v_Normal, v_DirectionTowardLight);
+            v_Normal = normalize(a_Position.xyz);
+            v_Color = vec4(1, 0, 0, 1) * u_LightEmission * dot(v_Normal, v_DirectionTowardLight);
+            v_Color.a = 1.0;
             gl_Position = v_Position;
         }
     </script>
