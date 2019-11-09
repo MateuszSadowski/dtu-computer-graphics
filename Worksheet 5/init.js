@@ -90,6 +90,80 @@ function init() {
 		};
 	}
 
+	// load model data
+	var a_Position = gl.getAttribLocation(program, 'a_Position');
+	var a_Normal = gl.getAttribLocation(program, 'a_Normal');
+	var a_Color = gl.getAttribLocation(program, 'a_Color');
+	var model = initVertexBuffers(gl, program);
+	readOBJFile("./teapot.obj", model, gl, 60, true);
+	
+	var g_objDoc = null; // The information of OBJ file
+	var g_drawingInfo = null; // The information for drawing 3D model
+
+	function initVertexBuffers(gl, program) {
+		var o = new Object();
+		o.vertexBuffer = createEmptyArrayBuffer(gl, a_Position, 3, gl.FLOAT);
+		o.normalBuffer = createEmptyArrayBuffer(gl, a_Normal, 3, gl.FLOAT);
+		o.colorBuffer = createEmptyArrayBuffer(gl, a_Color, 4, gl.FLOAT);
+		o.indexBuffer = gl.createBuffer();
+		return o;
+	}
+
+	function createEmptyArrayBuffer(gl, a_attribute, num, type) {
+		var buffer = gl.createBuffer(); // Create a buffer object
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.vertexAttribPointer(a_attribute, num, type, false, 0, 0);
+		gl.enableVertexAttribArray(a_attribute); // Enable the assignment
+
+		return buffer;
+	}
+
+	// Read a file
+	function readOBJFile(fileName, gl, model, scale, reverse) {
+		var request = new XMLHttpRequest();
+		request.onreadystatechange = function () {
+			if (request.readyState === 4 && request.status !== 404) {
+				onReadOBJFile(request.responseText, fileName, gl, model, scale, reverse);
+			}
+		}
+		request.open('GET', fileName, true); // Create a request to get file
+		request.send(); // Send the request
+	}
+
+	// OBJ file has been read
+	function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) {
+		var objDoc = new OBJDoc(fileName); // Create a OBJDoc object
+		var result = objDoc.parse(fileString, scale, reverse);
+		if (!result) {
+			g_objDoc = null; g_drawingInfo = null;
+			console.log("OBJ file parsing error.");
+			return;
+		}
+		g_objDoc = objDoc;
+	}
+
+	function onReadComplete(gl, model, objDoc) {
+		// Acquire the vertex coordinates and colors from OBJ file
+		var drawingInfo = objDoc.getDrawingInfo();
+
+		// Write date into the buffer object
+		gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.vertices, gl.STATIC_DRAW);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, model.normalBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.normals, gl.STATIC_DRAW);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, model.colorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.colors, gl.STATIC_DRAW);
+
+		// Write the indices to the buffer object
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, drawingInfo.indices, gl.STATIC_DRAW);
+
+		return drawingInfo;
+	}
+
 	// vertices for sphere
 	var va = vec4(0.0, 0.0, 1.0, 1);
 	var vb = vec4(0.0, 0.942809, -0.333333, 1);
@@ -110,9 +184,9 @@ function init() {
 	var vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 
-	var vPosition = gl.getAttribLocation(program, "a_Position");
-	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(vPosition);
+	// var vPosition = gl.getAttribLocation(program, "a_Position");
+	// gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+	// gl.enableVertexAttribArray(vPosition);
 
 	var uLightPosition = gl.getUniformLocation(program, "u_LightPosition");
 	gl.uniform4fv(uLightPosition, lightDirection);
@@ -128,13 +202,13 @@ function init() {
 
 	var uMaterialSpecular = gl.getUniformLocation(program, "u_MaterialSpecular");
 	gl.uniform1f(uMaterialSpecular, materialSpecular);
-	
+
 	var uMaterialShininess = gl.getUniformLocation(program, "u_MaterialShininess");
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
 	// === setup methods ===
 	function orbit() {
-		if(shouldOrbit) {	
+		if (shouldOrbit) {
 			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
 			vMat = lookAt(eye, at, up);
 			render();
@@ -152,7 +226,7 @@ function init() {
 	// var pMat = ortho(-2, 2, -2, 2, -50, 50);
 	var pMat = perspective(45, 1, 0.1, 10);
 	var vMat = lookAt(eye, at, up);
-
+	
 	function makeTetrahedron(a, b, c, d, n) {
 		tetrahedron = [];
 		divideTriangle(a, b, c, n);
@@ -186,11 +260,16 @@ function init() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
-		gl.deleteBuffer(gl.vBuffer);
-		gl.vBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
+		if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) { // OBJ and all MTLs are available
+			g_drawingInfo = onReadComplete(gl, model, g_objDoc);
+		}
+		if (!g_drawingInfo) return;
+
+		// makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
+		// gl.deleteBuffer(gl.vBuffer);
+		// gl.vBuffer = gl.createBuffer();
+		// gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		// gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -213,7 +292,8 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
-		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
+		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
+		gl.drawElements(gl.TRIANGLES, g_drawingInfo.indices.length, gl.UNSIGNED_SHORT, 0);
 	}
 
 	// === start program ===

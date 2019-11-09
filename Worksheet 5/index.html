@@ -34,7 +34,8 @@
     </script>
 
     <script id="vertex-shader" type="x-shader/x-vertex">
-        attribute vec4 a_Position;
+        attribute vec3 a_Position;
+        attribute vec3 a_Normal;
         attribute vec4 a_Color;
 
         uniform mat4 u_mvpMatrix;
@@ -51,28 +52,30 @@
         varying vec4 v_Position;
         varying vec3 v_Normal;
         void main() {
-            v_Position = u_mvpMatrix * a_Position;
-
-            vec3 v_Normal = normalize(a_Position.xyz);
+            
+            vec4 position = vec4(a_Position.x, a_Position.y, a_Position.z, 0.0);
+            vec3 v_Normal = a_Normal;
             vec3 normalEyeSpace = normalize(u_NMatrix * v_Normal);
             vec3 directionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
-            vec4 positionOnSphere = u_mvMatrix * a_Position;
+            vec4 positionOnSphere = u_mvMatrix * position;
             vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
             vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
-
-            v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
+            
+            v_Color = a_Color * u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
             v_Color.a = 1.0;
-
+            
+            v_Position = u_mvpMatrix * position;
             gl_Position = v_Position;
         }
     </script>
 
-    <script type="text/javascript" src="init.js"></script>
+    <script type="text/javascript" src="./init.js"></script>
     <script type="text/javascript" src="./angelCommon/webgl-utils.js"></script>
     <script type="text/javascript" src="./webgl-lessons-ui.js"></script>
     <script type="text/javascript" src="./angelCommon/MV.js"></script>
     <script type="text/javascript" src="./angelCommon/MVnew.js"></script>
     <script type="text/javascript" src="./angelCommon/initShaders.js"></script>
+    <script type="text/javascript" src="./OBJParser.js"></script>
 </body>
 
 </html>
