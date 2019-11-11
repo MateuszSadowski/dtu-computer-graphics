@@ -23,7 +23,7 @@ function init() {
 	// gl.frontFace(gl.CW);
 
 	// === setup UI ===
-	var translation = [0, 0, 20];
+	var translation = [0, 0, 28];
 	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
@@ -98,10 +98,10 @@ function init() {
 	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 	var tetrahedron = [];
 
-	var plane = [ vec4(-4.0, -1.0, -1.0, 1.0),
-		vec4(4.0, -1.0, -1.0, 1.0),
-		vec4(-4.0, -1.0, -21.0, 1.0),
-		vec4(4.0, -1.0, -21.0, 1.0)];
+	var plane = [vec4(-4.0, -1.0, -1.0, 1.0),
+	vec4(4.0, -1.0, -1.0, 1.0),
+	vec4(4.0, -1.0, -21.0, 1.0),
+	vec4(-4.0, -1.0, -21.0, 1.0)];
 
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
@@ -111,6 +111,53 @@ function init() {
 	var materialSpecular = 1.0;
 	var materialShininess = 100.0;
 	//TODO: Add ambient coefficient
+
+	// texture
+	var texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
+
+	var texSize = 64;
+	var numRows = 8;
+	var numCols = 8;
+	var myTexels = new Uint8Array(4 * texSize * texSize);
+	for (var i = 0; i < texSize; ++i) {
+		for (var j = 0; j < texSize; ++j) {
+			var patchx = Math.floor(i / (texSize / numRows));
+			var patchy = Math.floor(j / (texSize / numCols));
+
+			var c = (patchx % 2 !== patchy % 2 ? 255 : 0);
+
+			myTexels[4 * i * texSize + 4 * j] = c;
+			myTexels[4 * i * texSize + 4 * j + 1] = c;
+			myTexels[4 * i * texSize + 4 * j + 2] = c;
+			myTexels[4 * i * texSize + 4 * j + 3] = 255;
+		}
+	}
+
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+
+	var texCoord = [
+		vec2(-1.5, 0.0),
+		vec2(2.5, 0.0),
+		vec2(2.5, 10.0),
+		vec2(-1.5, 10.0)
+	];
+
+	var tBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoord), gl.STATIC_DRAW);
+
+	var aTexCoord = gl.getAttribLocation(program, "a_TexCoord");
+	gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(aTexCoord);
+
+	//TODO: Add buttons to change gl.TEXTURE_WRAP_S and gl.TEXTURE_MIN_FILTER
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 
 	// upload values to shader
 	var vBuffer = gl.createBuffer();
@@ -134,13 +181,13 @@ function init() {
 
 	var uMaterialSpecular = gl.getUniformLocation(program, "u_MaterialSpecular");
 	gl.uniform1f(uMaterialSpecular, materialSpecular);
-	
+
 	var uMaterialShininess = gl.getUniformLocation(program, "u_MaterialShininess");
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
 	// === setup methods ===
 	function orbit() {
-		if(shouldOrbit) {	
+		if (shouldOrbit) {
 			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
 			vMat = lookAt(eye, at, up);
 			render();
@@ -221,7 +268,7 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, plane.length);
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, plane.length);
 	}
 
 	// === start program ===
