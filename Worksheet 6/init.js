@@ -4,8 +4,9 @@ onload = init;
 
 let ORBIT_STEP = 0.01;
 //TODO: remove these constants
-let TRANSLATION_SCALE_FACTOR = 200;
-let Z_TRANSLATION_RANGE_FACTOR = 10;
+let TRANSLATION_SCALE_FACTOR = 1;
+let Z_TRANSLATION_RANGE_FACTOR = 1;
+let MAX_ORBIT_RADIUS = 25;
 
 function init() {
 	var canvas = document.getElementById("c");
@@ -18,15 +19,15 @@ function init() {
 	gl.useProgram(program);
 	gl.vBuffer = null;
 	gl.enable(gl.DEPTH_TEST);
-	gl.enable(gl.CULL_FACE);
+	// gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
 	// === setup UI ===
-	var translation = [0, 0, 0];
-	var rotation = [128, 140, 26];
+	var translation = [0, 0, 20];
+	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
-	var orbitRadius = 4.5;
+	var orbitRadius = 25;
 	var orbitAngle = 0;
 	var shouldOrbit = 0;
 
@@ -40,7 +41,7 @@ function init() {
 	webglLessonsUI.setupSlider("#scaleX", { value: scaleValues[0], slide: updateScale(0), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleY", { value: scaleValues[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleZ", { value: scaleValues[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2 });
-	webglLessonsUI.setupSlider("#orbitR", { value: orbitRadius, slide: updateOrbitRadius(), min: 0, max: 5, step: 0.01, precision: 2 });
+	webglLessonsUI.setupSlider("#orbitR", { value: orbitRadius, slide: updateOrbitRadius(), min: 1, max: MAX_ORBIT_RADIUS, step: 0.01, precision: 2 });
 	// buttons
 	var decreaseSubdivisionButton = document.getElementById("dec-sub");
 	decreaseSubdivisionButton.addEventListener("click", () => {
@@ -97,6 +98,11 @@ function init() {
 	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 	var tetrahedron = [];
 
+	var plane = [ vec4(-4.0, -1.0, -1.0, 1.0),
+		vec4(4.0, -1.0, -1.0, 1.0),
+		vec4(-4.0, -1.0, -21.0, 1.0),
+		vec4(4.0, -1.0, -21.0, 1.0)];
+
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
@@ -149,8 +155,8 @@ function init() {
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
-	// var pMat = ortho(-2, 2, -2, 2, -50, 50);
-	var pMat = perspective(45, 1, 0.1, 10);
+	// var pMat = ortho(-20, 20, -20, 20, -100, 100);
+	var pMat = perspective(90, 1, 0.1, 100);
 	var vMat = lookAt(eye, at, up);
 
 	function makeTetrahedron(a, b, c, d, n) {
@@ -186,11 +192,13 @@ function init() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
+		// sphere
+		// makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
+
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(plane), gl.STATIC_DRAW);
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -213,7 +221,7 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
-		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, plane.length);
 	}
 
 	// === start program ===
