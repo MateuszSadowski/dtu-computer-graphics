@@ -95,7 +95,7 @@ function init() {
 	var a_Normal = gl.getAttribLocation(program, 'a_Normal');
 	var a_Color = gl.getAttribLocation(program, 'a_Color');
 	var model = initVertexBuffers(gl, program);
-	readOBJFile("./teapot.obj", model, gl, 60, true);
+	readOBJFile("./teapot.obj", model, gl, 1, false);
 	
 	var g_objDoc = null; // The information of OBJ file
 	var g_drawingInfo = null; // The information for drawing 3D model
@@ -181,8 +181,8 @@ function init() {
 	//TODO: Add ambient coefficient
 
 	// upload values to shader
-	var vBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+	// var vBuffer = gl.createBuffer();
+	// gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 
 	// var vPosition = gl.getAttribLocation(program, "a_Position");
 	// gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
@@ -219,12 +219,13 @@ function init() {
 		}
 	}
 
-	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	// var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	var eye = vec3(0, 0, 5);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
 	// var pMat = ortho(-2, 2, -2, 2, -50, 50);
-	var pMat = perspective(45, 1, 0.1, 10);
+	var pMat = perspective(90, 1, 0.1, 100);
 	var vMat = lookAt(eye, at, up);
 	
 	function makeTetrahedron(a, b, c, d, n) {
@@ -297,7 +298,8 @@ function init() {
 	}
 
 	// === start program ===
-	render();
+	// render();
+	setInterval(render, 1000);
 }
 
 /**
