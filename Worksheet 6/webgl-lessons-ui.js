@@ -31,7 +31,7 @@
 
 
 (function(root, factory) {  // eslint-disable-line
-  if (typeof define === 'function' && define.amd) {
+  if (typeof define === "function" && define.amd) {
     // AMD. Register as an anonymous module.
     define([], function() {
       return factory.call(root);
@@ -47,7 +47,7 @@
   function setupSlider(selector, options) {
     var parent = document.querySelector(selector);
     if (!parent) {
-      return; // like jquery don't fail on a bad selector
+      return; // like jquery don"t fail on a bad selector
     }
     if (!options.name) {
       options.name = selector.substring(1);
@@ -92,8 +92,8 @@
       fn(event, { value: value * step });
     }
 
-    sliderElem.addEventListener('input', handleChange);
-    sliderElem.addEventListener('change', handleChange);
+    sliderElem.addEventListener("input", handleChange);
+    sliderElem.addEventListener("change", handleChange);
 
     return {
       elem: parent,
@@ -120,7 +120,7 @@
     div.className = "gman-widget-outer";
     const label = document.createElement("label");
     const id = getWidgetId();
-    label.setAttribute('for', id);
+    label.setAttribute("for", id);
     label.textContent = gopt["ui-" + options.name] || options.name;
     label.className = "gman-checkbox-label";
     const input = document.createElement("input");
@@ -130,7 +130,7 @@
     input.className = "gman-widget-checkbox";
     div.appendChild(label);
     div.appendChild(input);
-    input.addEventListener('change', function(e) {
+    input.addEventListener("change", function(e) {
        options.change(e, {
          value: e.target.checked,
        });
@@ -149,7 +149,7 @@
     div.className = "gman-widget-outer";
     const label = document.createElement("label");
     const id = getWidgetId();
-    label.setAttribute('for', id);
+    label.setAttribute("for", id);
     label.textContent = gopt["ui-" + options.name] || options.name;
     label.className = "gman-widget-label";
     const selectElem = document.createElement("select");
@@ -163,7 +163,7 @@
     selectElem.className = "gman-widget-select";
     div.appendChild(label);
     div.appendChild(selectElem);
-    selectElem.addEventListener('change', function(e) {
+    selectElem.addEventListener("change", function(e) {
        options.change(e, {
          value: selectElem.selectedIndex,
        });
