@@ -34,12 +34,26 @@
         varying vec4 v_Color;
         varying vec2 v_TexCoord;
         varying vec3 v_Normal;
+
+        varying vec3 v_directionTowardLight;
+        varying vec3 v_directionTowardObserver;
+        varying vec3 v_directionPerfectReflection;
+        varying vec3 v_normalEyeSpace;
+        
+        varying vec4 v_LightEmission;
+        varying vec4 v_LightAmbiance;
+        varying float v_MaterialDiffuse;
+        varying float v_MaterialSpecular;
+        varying float v_MaterialShininess;
         void main() {
             float phi = atan(v_Normal.z, v_Normal.x);
             float theta = acos(v_Normal.y);
             vec2 texCoords = vec2(1.0 - (phi / (2.0 * M_PI)), theta / M_PI);
 
-            gl_FragColor = texture2D(u_TexMap, texCoords);
+            //gl_FragColor = texture2D(u_TexMap, texCoords);
+            gl_FragColor = texture2D(u_TexMap, texCoords) * vec4(0.2, 0.2, 0.2, 1.0) + texture2D(u_TexMap, texCoords) * v_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * v_LightEmission + v_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), v_MaterialShininess) * v_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+            gl_FragColor.a = 1.0;
+
             //gl_FragColor = v_Color * textureCube(u_TexMap, v_Normal); //for cubemap
         }
     </script>
@@ -63,20 +77,33 @@
         varying vec4 v_Position;
         varying vec3 v_Normal;
         varying vec2 v_TexCoord;
+
+        varying vec3 v_directionTowardLight;
+        varying vec3 v_directionTowardObserver;
+        varying vec3 v_directionPerfectReflection;
+        varying vec3 v_normalEyeSpace;
+        varying vec4 v_LightEmission;
+        varying vec4 v_LightAmbiance;
+        varying float v_MaterialDiffuse;
+        varying float v_MaterialSpecular;
+        varying float v_MaterialShininess;
         void main() {
             v_Position = u_mvpMatrix * a_Position;
 
             v_Normal = normalize(a_Position.xyz);
-            vec3 normalEyeSpace = normalize(u_NMatrix * v_Normal);
-            vec3 directionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
+            v_normalEyeSpace = normalize(u_NMatrix * v_Normal);
+            v_directionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
             vec4 positionOnSphere = u_mvMatrix * a_Position;
-            vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
-            vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
+            v_directionTowardObserver = -normalize(positionOnSphere.xyz);
+            v_directionPerfectReflection = 2.0 * dot(v_directionTowardLight, v_normalEyeSpace.xyz) * v_normalEyeSpace.xyz - v_directionTowardLight;
 
-            v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
-            //v_Color.a = 1.0;
-            //v_Color = vec4(1.0, 1.0, 1.0, 1.0);
-            //v_TexCoord = a_TexCoord;
+            v_LightEmission = u_LightEmission;
+            v_LightAmbiance = u_LightAmbiance;
+            v_MaterialDiffuse = u_MaterialDiffuse;
+            v_MaterialSpecular = u_MaterialSpecular;
+            v_MaterialShininess = u_MaterialShininess;
+
+            //v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
             gl_Position = v_Position;
         }
     </script>

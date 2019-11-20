@@ -103,10 +103,10 @@ function init() {
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
-	var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
 	var materialDiffuse = 1.0;
 	var materialSpecular = 1.0;
-	var materialShininess = 100.0;
+	var materialShininess = 10.0;
 	//TODO: Add ambient coefficient
 
 	// texture
