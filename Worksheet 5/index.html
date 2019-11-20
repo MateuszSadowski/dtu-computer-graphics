@@ -42,7 +42,7 @@
         uniform mat3 u_NMatrix;
         uniform vec4 u_LightPosition;
         uniform vec4 u_LightEmission;
-        uniform vec4 u_LightAmbiance;
+        uniform vec4 u_LightAmbient;
         uniform float u_MaterialDiffuse;
         uniform float u_MaterialSpecular;
         uniform float u_MaterialShininess;
@@ -60,7 +60,7 @@
             vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
             vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
 
-            v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
+            v_Color = u_LightAmbient + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
             v_Color.a = 1.0;
 
             gl_Position = v_Position;
