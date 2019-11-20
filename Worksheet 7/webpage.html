@@ -29,8 +29,7 @@
         #define M_PI 3.1415926535897932384626433832795
 
         precision mediump float;
-        //uniform samplerCube u_TexMap;
-        uniform sampler2D u_TexMap;
+        uniform samplerCube u_TexMap;
         uniform vec4 u_LightEmission;
         uniform vec4 u_LightAmbient;
         uniform float u_MaterialDiffuse;
@@ -48,10 +47,9 @@
             float theta = acos(v_Normal.y);
             vec2 texCoords = vec2(1.0 - (phi / (2.0 * M_PI)), theta / M_PI);
 
-            gl_FragColor = texture2D(u_TexMap, texCoords) * u_LightAmbient + texture2D(u_TexMap, texCoords) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+            //gl_FragColor = textureCube(u_TexMap, v_Normal) * u_LightAmbient + textureCube(u_TexMap, v_Normal) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+            gl_FragColor = textureCube(u_TexMap, v_Normal);
             gl_FragColor.a = 1.0;
-
-            //gl_FragColor = v_Color * textureCube(u_TexMap, v_Normal); //for cubemap
         }
     </script>
 

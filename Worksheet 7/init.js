@@ -22,8 +22,6 @@ function init() {
 	gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
-	var imageLoaded = false;
-
 	// === setup UI ===
 	var translation = [0, 0, 0];
 	var rotation = [0, 0, 0];
@@ -109,28 +107,10 @@ function init() {
 	var materialShininess = 100.0;
 	//TODO: Add ambient coefficient
 
+	var g_tex_ready = 0;
+
 	// texture
-	var image = document.createElement("img");
-	image.crossorigin = "anonymous";
-	image.onload = function () {
-		// Insert WebGL texture initialization here
-		var texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
-
-		// gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-		//TODO: Add buttons to change gl.TEXTURE_WRAP_S and gl.TEXTURE_MIN_FILTER
-		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-
-		imageLoaded = true;
-	};
-	image.src = "earth.jpg";
+	initTexture();
 
 	// upload values to shader
 	var vBuffer = gl.createBuffer();
@@ -159,6 +139,34 @@ function init() {
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
 	// === setup methods ===
+	function initTexture() {
+		var cubemap = ["textures/cm_left.png", // POSITIVE_X
+			"textures/cm_right.png", // NEGATIVE_X
+			"textures/cm_top.png", // POSITIVE_Y
+			"textures/cm_bottom.png", // NEGATIVE_Y
+			"textures/cm_back.png", // POSITIVE_Z
+			"textures/cm_front.png"]; // NEGATIVE_Z
+
+		var texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		
+		for (var i = 0; i < 6; ++i) {
+			var image = document.createElement("img");
+			image.crossorigin = "anonymous";
+			image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
+			image.onload = function (event) {
+				var image = event.target;
+				gl.texImage2D(image.textarget, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+				++g_tex_ready;
+			};
+			image.src = cubemap[i];
+		}
+	}
+
 	function orbit() {
 		if (shouldOrbit) {
 			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
@@ -207,11 +215,11 @@ function init() {
 		tetrahedron.push(b);
 		tetrahedron.push(c);
 	}
-	
+
 	function render() {
-		gl.clearColor(0, 0, 0, 1.0);
+		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		if(!imageLoaded)
+		if (g_tex_ready < 6)
 			return;
 
 		// sphere
