@@ -35,18 +35,10 @@
         varying vec2 v_TexCoord;
         varying vec3 v_Normal;
         void main() {
-            float r = sqrt(v_Normal.x * v_Normal.x + v_Normal.y * v_Normal.y + v_Normal.z * v_Normal.z);
-            //float phi = atan(v_Normal.x / v_Normal.y);  //TODO: atan(v_Normal.y / v_Normal.x) ???
-            //float phi = atan(v_Normal.y, v_Normal.x);
-            //float theta = acos(v_Normal.z / r);
-            //float phi = atan(v_Normal.x, v_Normal.z) / (2.0*M_PI) + 0.5;
-            //float theta = v_Normal.y * 0.5 + 0.5;
-
             float phi = atan(v_Normal.z, v_Normal.x);
             float theta = acos(v_Normal.y);
-
             vec2 texCoords = vec2(1.0 - (phi / (2.0 * M_PI)), theta / M_PI);
-            //vec2 texCoords = vec2(phi, theta);
+
             gl_FragColor = texture2D(u_TexMap, texCoords);
             //gl_FragColor = v_Color * textureCube(u_TexMap, v_Normal); //for cubemap
         }
@@ -81,9 +73,9 @@
             vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
             vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
 
-            //v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
+            v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
             //v_Color.a = 1.0;
-            v_Color = vec4(1.0, 1.0, 1.0, 1.0);
+            //v_Color = vec4(1.0, 1.0, 1.0, 1.0);
             //v_TexCoord = a_TexCoord;
             gl_Position = v_Position;
         }

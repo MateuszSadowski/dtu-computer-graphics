@@ -22,12 +22,14 @@ function init() {
 	gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
+	var imageLoaded = false;
+
 	// === setup UI ===
 	var translation = [0, 0, 0];
 	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
-	var orbitRadius = 25;
+	var orbitRadius = 2;
 	var orbitAngle = 0;
 	var shouldOrbit = 0;
 
@@ -125,17 +127,10 @@ function init() {
 		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.generateMipmap(gl.TEXTURE_2D);
 		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+
+		imageLoaded = true;
 	};
 	image.src = "earth.jpg";
-
-
-	// var tBuffer = gl.createBuffer();
-	// gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
-	// gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoord), gl.STATIC_DRAW);
-
-	// var aTexCoord = gl.getAttribLocation(program, "a_TexCoord");
-	// gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
-	// gl.enableVertexAttribArray(aTexCoord);
 
 	// upload values to shader
 	var vBuffer = gl.createBuffer();
@@ -212,10 +207,12 @@ function init() {
 		tetrahedron.push(b);
 		tetrahedron.push(c);
 	}
-
+	
 	function render() {
 		gl.clearColor(0, 0, 0, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		if(!imageLoaded)
+			return;
 
 		// sphere
 		makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
@@ -249,8 +246,13 @@ function init() {
 		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 	}
 
+	function tick() {
+		render();
+		requestAnimationFrame(tick);
+	}
+
 	// === start program ===
-	render();
+	tick();
 }
 
 /**
