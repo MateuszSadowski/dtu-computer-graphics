@@ -49,6 +49,7 @@
 
             //gl_FragColor = textureCube(u_TexMap, v_Normal) * u_LightAmbient + textureCube(u_TexMap, v_Normal) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
             gl_FragColor = textureCube(u_TexMap, v_Normal);
+            //gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
             gl_FragColor.a = 1.0;
         }
     </script>

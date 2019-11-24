@@ -98,6 +98,13 @@ function init() {
 	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 	var tetrahedron = [];
 
+	// vetices for quad filling background
+	var v1 = vec4(-3, -3, -0.999, 1);
+	var v2 = vec4(3, -3, -0.999, 1);
+	var v3 = vec4(3, 3, -0.999, 1);
+	var v4 = vec4(-3, 3, -0.999, 1);
+	var backgroundQuad = [v1, v2, v3, v4];
+
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
@@ -179,12 +186,13 @@ function init() {
 		}
 	}
 
-	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	// var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	var eye = vec3(0, 0, 2);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
-	// var pMat = ortho(-20, 20, -20, 20, -100, 100);
-	var pMat = perspective(90, 1, 0.1, 100);
+	// var pMat = ortho(-2, 2, -2, 2, -5, 10);
+	var pMat = perspective(90, 1, 0.1, 5);
 	var vMat = lookAt(eye, at, up);
 
 	function makeTetrahedron(a, b, c, d, n) {
@@ -216,7 +224,24 @@ function init() {
 		tetrahedron.push(c);
 	}
 
+	function draw(type, vertices) {
+		initBuffersAndUploadVertices(vertices);
+		gl.drawArrays(type, 0, vertices.length);
+	}
+
+	function initBuffersAndUploadVertices(vertices) {
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		if(!gl.vBuffer) {
+			console.log("Failed to create vertex buffer.");
+			return -1;
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+	}
+
 	function render() {
+		console.log(pMat);
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		if (g_tex_ready < 6)
@@ -224,11 +249,6 @@ function init() {
 
 		// sphere
 		makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
-
-		gl.deleteBuffer(gl.vBuffer);
-		gl.vBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, flatten(tetrahedron), gl.STATIC_DRAW);
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -251,7 +271,9 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
-		gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
+		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
+		draw(gl.TRIANGLE_FAN, backgroundQuad);
+		draw(gl.TRIANGLES, tetrahedron);
 	}
 
 	function tick() {
