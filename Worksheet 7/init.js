@@ -145,6 +145,9 @@ function init() {
 	var uMaterialShininess = gl.getUniformLocation(program, "u_MaterialShininess");
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
+	// var uWindowSize = gl.getUniformLocation(program, "u_WindowSize");
+	// gl.uniform2fv(uWindowSize, );
+
 	// === setup methods ===
 	function initTexture() {
 		var cubemap = ["textures/cm_left.png", // POSITIVE_X
@@ -254,9 +257,11 @@ function init() {
 		// last specified transformation is first to be applied
 		var mMat = mat4();
 		mMat = mult(mMat, translate(translation[0], translation[1], translation[2]));
-		mMat = mult(mMat, rotate(rotation[0], vec3(1, 0, 0)));
-		mMat = mult(mMat, rotate(rotation[1], vec3(0, 1, 0)));
-		mMat = mult(mMat, rotate(rotation[2], vec3(0, 0, 1)));
+		var rMat = mat4();
+		rMat = mult(rMat, rotate(rotation[0], vec3(1, 0, 0)));
+		rMat = mult(rMat, rotate(rotation[1], vec3(0, 1, 0)));
+		rMat = mult(rMat, rotate(rotation[2], vec3(0, 0, 1)));
+		mMat = mult(mMat, rMat);
 		mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
 		var mvMat = mult(vMat, mMat);
 		var mvpMat = mult(pMat, mvMat);
@@ -270,6 +275,10 @@ function init() {
 
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
+
+		var texMat = mult(inverse4(rMat), inverse4(pMat));
+		var utexMatrix = gl.getUniformLocation(program, "u_texMatrix");
+		gl.uniformMatrix4fv(utexMatrix, false, flatten(texMat));
 
 		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 		draw(gl.TRIANGLE_FAN, backgroundQuad);
