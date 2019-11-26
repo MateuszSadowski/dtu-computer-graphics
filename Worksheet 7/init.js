@@ -107,11 +107,11 @@ function init() {
 
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
-	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
-	var lightAmbient = vec4(0.1, 0.1, 0.1, 1.0);
+	var lightEmission = vec4(0.2, 0.2, 0.2, 1.0);
+	var lightAmbient = vec4(1.0, 1.0, 1.0, 1.0);
 	var materialDiffuse = 1.0;
-	var materialSpecular = 1.0;
-	var materialShininess = 100.0;
+	var materialSpecular = 10.0;
+	var materialShininess = 500.0;
 	//TODO: Add ambient coefficient
 
 	var g_tex_ready = 0;
@@ -189,8 +189,8 @@ function init() {
 		}
 	}
 
-	// var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
-	var eye = vec3(0, 0, 2);
+	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	//var eye = vec3(0, 0, 2);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
@@ -244,7 +244,6 @@ function init() {
 	}
 
 	function render() {
-		console.log(pMat);
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		if (g_tex_ready < 6)
@@ -270,18 +269,21 @@ function init() {
 		var uNMatrix = gl.getUniformLocation(program, "u_NMatrix");
 		gl.uniformMatrix3fv(uNMatrix, false, flatten(N));
 
-		var umvMatrix = gl.getUniformLocation(program, "u_mvMatrix");
-		gl.uniformMatrix4fv(umvMatrix, false, flatten(mvMat));
+		var uMVMatrix = gl.getUniformLocation(program, "u_mvMatrix");
+		gl.uniformMatrix4fv(uMVMatrix, false, flatten(mvMat));
 
-		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
-		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
+		var uMVPMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
+		gl.uniformMatrix4fv(uMVPMatrix, false, flatten(mvpMat));
 
 		var texMat = mult(inverse4(rMat), inverse4(pMat));
-		var utexMatrix = gl.getUniformLocation(program, "u_texMatrix");
-		gl.uniformMatrix4fv(utexMatrix, false, flatten(texMat));
+		var uTexMatrix = gl.getUniformLocation(program, "u_texMatrix");
+		gl.uniformMatrix4fv(uTexMatrix, false, flatten(texMat));
+
+		var uEyePosition = gl.getUniformLocation(program, "u_EyePosition");
+		gl.uniform3fv(uEyePosition, flatten(eye));
 
 		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
-		draw(gl.TRIANGLE_FAN, backgroundQuad);
+		// draw(gl.TRIANGLE_FAN, backgroundQuad);
 		draw(gl.TRIANGLES, tetrahedron);
 	}
 
