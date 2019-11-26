@@ -35,6 +35,7 @@
         uniform float u_MaterialDiffuse;
         uniform float u_MaterialSpecular;
         uniform float u_MaterialShininess;
+        uniform int u_IsReflective;
 
         varying vec3 v_TexCoord;
         varying vec3 v_Normal;
@@ -43,11 +44,11 @@
         varying vec3 v_directionPerfectReflection;
         varying vec3 v_normalEyeSpace;
         void main() {
-            //gl_FragColor = textureCube(u_TexMap, v_Normal) * u_LightAmbient + textureCube(u_TexMap, v_Normal) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
-            //gl_FragColor = textureCube(u_TexMap, v_Normal);
-            gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
-            //gl_FragColor = textureCube(u_TexMap, v_TexCoord);
-            gl_FragColor.a = 1.0;
+            if(u_IsReflective == 1) {
+                gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+            } else {
+                gl_FragColor = textureCube(u_TexMap, v_Normal);
+            }
         }
     </script>
 

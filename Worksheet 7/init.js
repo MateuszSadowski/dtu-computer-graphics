@@ -145,9 +145,6 @@ function init() {
 	var uMaterialShininess = gl.getUniformLocation(program, "u_MaterialShininess");
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
-	// var uWindowSize = gl.getUniformLocation(program, "u_WindowSize");
-	// gl.uniform2fv(uWindowSize, );
-
 	// === setup methods ===
 	function initTexture() {
 		var cubemap = ["textures/cm_left.png", // POSITIVE_X
@@ -282,8 +279,13 @@ function init() {
 		var uEyePosition = gl.getUniformLocation(program, "u_EyePosition");
 		gl.uniform3fv(uEyePosition, flatten(eye));
 
+		var uIsReflective = gl.getUniformLocation(program, "u_IsReflective");
+		gl.uniform1i(uIsReflective, 0);
+		
 		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
-		// draw(gl.TRIANGLE_FAN, backgroundQuad);
+		draw(gl.TRIANGLE_FAN, backgroundQuad);
+
+		gl.uniform1i(uIsReflective, 1);
 		draw(gl.TRIANGLES, tetrahedron);
 	}
 
