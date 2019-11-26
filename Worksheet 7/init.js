@@ -161,16 +161,25 @@ function init() {
 		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		
-		for (var i = 0; i < 6; ++i) {
-			var image = document.createElement("img");
-			image.crossorigin = "anonymous";
-			image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
-			image.onload = function (event) {
+		loadCubemap(cubemap);
+	}
+
+	function loadImage(url, callback) {
+		var image = document.createElement("img");
+		image.src = url;
+		image.onload = callback;
+		return image;
+	}
+
+	function loadCubemap(images) {
+		for (var i = 0; i < images.length; ++i) {
+			var image = loadImage(images[i], function (event) {
 				var image = event.target;
 				gl.texImage2D(image.textarget, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
 				++g_tex_ready;
-			};
-			image.src = cubemap[i];
+			});
+			image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
+			image.src = images[i];
 		}
 	}
 
