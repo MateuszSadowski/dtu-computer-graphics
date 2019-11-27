@@ -186,11 +186,6 @@ function init() {
 		gl.uniform1i(u_image0Location, 0);  // texture unit 0
 		gl.uniform1i(u_image1Location, 1);  // texture unit 1
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture1);
-		// gl.activeTexture(gl.TEXTURE1);
-		// gl.bindTexture(gl.TEXTURE_2D, texture2);
-
 		function loadImage(url, callback) {
 			var image = document.createElement("img");
 			image.src = url;
@@ -298,6 +293,18 @@ function init() {
 		gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
 	}
 
+	//compute plane mvp matrix
+	var planemMat = mat4();
+	planemMat = mult(planemMat, translate(translation[0], translation[1], translation[2]));
+	var planerMat = mat4();
+	planerMat = mult(planerMat, rotate(rotation[0], vec3(1, 0, 0)));
+	planerMat = mult(planerMat, rotate(rotation[1], vec3(0, 1, 0)));
+	planerMat = mult(planerMat, rotate(rotation[2], vec3(0, 0, 1)));
+	planemMat = mult(planemMat, planerMat);
+	planemMat = mult(planemMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
+	var planemvMat = mult(vMat, planemMat);
+	var planemvpMat = mult(pMat, planemvMat);
+
 	function render() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -328,7 +335,6 @@ function init() {
 		gl.uniformMatrix4fv(uMVMatrix, false, flatten(mvMat));
 
 		var uMVPMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
-		gl.uniformMatrix4fv(uMVPMatrix, false, flatten(mvpMat));
 
 		// TODO: zero bottom and right column/row
 		var tmpRMat = rMat;
@@ -343,10 +349,12 @@ function init() {
 
 		var uIsReflective = gl.getUniformLocation(program, "u_IsReflective");
 		gl.uniform1i(uIsReflective, 0);
+		gl.uniformMatrix4fv(uMVPMatrix, false, flatten(planemvpMat));
 
 		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 		draw(gl.TRIANGLE_FAN, backgroundQuad);
 
+		gl.uniformMatrix4fv(uMVPMatrix, false, flatten(mvpMat));
 		gl.uniformMatrix4fv(uTexMatrix, false, flatten(mat4()));
 		gl.uniform1i(uIsReflective, 1);
 		draw(gl.TRIANGLES, tetrahedron);

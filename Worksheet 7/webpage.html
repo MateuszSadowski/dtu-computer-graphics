@@ -37,6 +37,7 @@
         uniform float u_MaterialSpecular;
         uniform float u_MaterialShininess;
         uniform int u_IsReflective;
+        uniform vec3 u_EyePosition;
 
         varying vec3 v_TexCoord;
         varying vec3 v_Normal;
@@ -44,6 +45,15 @@
         varying vec3 v_directionTowardObserver;
         varying vec3 v_directionPerfectReflection;
         varying vec3 v_normalEyeSpace;
+
+        vec3 rotate_to_normal(vec3 normal, vec3 v) {
+            float a = 1.0/(1.0 + normal.z);
+            float b = -normal.x*normal.y*a;
+            return vec3(1.0 - normal.x*normal.x*a, b, -normal.x)*v.x
+            + vec3(b, 1.0 - normal.y*normal.y*a, -normal.y)*v.y
+            + normal*v.z;
+        }
+
         void main() {
             float phi = atan(v_Normal.z, v_Normal.x);
             float theta = acos(v_Normal.y);
@@ -51,7 +61,10 @@
 
             if(u_IsReflective == 1) {
                 //gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
-                gl_FragColor = texture2D(u_BumpMap, texCoords);
+                vec4 bumpmapNormal = texture2D(u_BumpMap, texCoords);
+                vec3 perturbedNormal = rotate_to_normal(v_Normal, bumpmapNormal.xyz);
+                vec3 newTexCoords = reflect(-(u_EyePosition - v_Normal), perturbedNormal);
+                gl_FragColor = textureCube(u_TexMap, newTexCoords);
             } else {
                 gl_FragColor = textureCube(u_TexMap, v_TexCoord);
             }
@@ -69,7 +82,6 @@
         uniform mat3 u_NMatrix;
         uniform vec4 u_LightPosition;
         uniform vec2 u_WindowSize;
-        uniform vec3 u_EyePosition;
 
         varying vec4 v_Position;
         varying vec3 v_Normal;
@@ -78,7 +90,9 @@
         varying vec3 v_directionTowardObserver;
         varying vec3 v_directionPerfectReflection;
         varying vec3 v_normalEyeSpace;
+        varying vec3 v_eyePosition;
         void main() {
+            //TODO: when drawing plane mvp matrix is identity matrix
             v_Position = u_mvpMatrix * a_Position;
 
             v_Normal = normalize(a_Position.xyz);
@@ -88,7 +102,7 @@
             v_directionTowardObserver = -normalize(positionOnSphere.xyz);
             v_directionPerfectReflection = 2.0 * dot(v_directionTowardLight, v_normalEyeSpace.xyz) * v_normalEyeSpace.xyz - v_directionTowardLight;
 
-            //v_TexCoord = reflect(-u_EyePosition, v_normalEyeSpace);
+            //TODO: modify normal with rotation part of the model matrix to fix the rotation slider
             v_TexCoord = (u_texMatrix * v_Position).xyz;
             gl_Position = v_Position;
         }
