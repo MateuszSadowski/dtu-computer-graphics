@@ -154,32 +154,81 @@ function init() {
 			"textures/cm_back.png", // POSITIVE_Z
 			"textures/cm_front.png"]; // NEGATIVE_Z
 
-		var texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+
+		gl.activeTexture(gl.TEXTURE0);
+		var texture1 = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture1);
 		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		
+
 		loadCubemap(cubemap);
-	}
+	
+		gl.activeTexture(gl.TEXTURE1);
+		var texture2 = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture2);
+		gl.uniform1i(gl.getUniformLocation(program, "u_BumpMap"), 0);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		
+		var images = loadImages(["textures/normalmap.png"], () => {
+			gl.activeTexture(gl.TEXTURE1);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images[0]);
+			tick();
+		});
 
-	function loadImage(url, callback) {
-		var image = document.createElement("img");
-		image.src = url;
-		image.onload = callback;
-		return image;
-	}
+		var u_image0Location = gl.getUniformLocation(program, "u_TexMap");
+		var u_image1Location = gl.getUniformLocation(program, "u_BumpMap");
+	   	   
+		// set which texture units to render with.
+		gl.uniform1i(u_image0Location, 0);  // texture unit 0
+		gl.uniform1i(u_image1Location, 1);  // texture unit 1
 
-	function loadCubemap(images) {
-		for (var i = 0; i < images.length; ++i) {
-			var image = loadImage(images[i], function (event) {
-				var image = event.target;
-				gl.texImage2D(image.textarget, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-				++g_tex_ready;
-			});
-			image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
-			image.src = images[i];
+		// gl.activeTexture(gl.TEXTURE0);
+		// gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture1);
+		// gl.activeTexture(gl.TEXTURE1);
+		// gl.bindTexture(gl.TEXTURE_2D, texture2);
+
+		function loadImage(url, callback) {
+			var image = document.createElement("img");
+			image.src = url;
+			image.onload = callback;
+			return image;
+		}
+
+		function loadCubemap(images) {
+			for (var i = 0; i < images.length; ++i) {
+				var image = loadImage(images[i], (event) => {
+					var image = event.target;
+					gl.activeTexture(gl.TEXTURE0);
+					gl.texImage2D(image.textarget, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+					++g_tex_ready;
+				});
+				image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
+				image.src = images[i];
+			}
+		}
+
+		function loadImages(urls, callback) {
+			var images = [];
+			var imagesToLoad = urls.length;
+
+			// Called each time an image finished loading.
+			var onImageLoad = function () {
+				--imagesToLoad;
+				// If all the images are loaded call the callback.
+				if (imagesToLoad == 0) {
+					callback(images);
+				}
+			};
+
+			for (var i = 0; i < imagesToLoad; ++i) {
+				var image = loadImage(urls[i], onImageLoad);
+				images.push(image);
+			}
+			return images;
 		}
 	}
 
@@ -241,7 +290,7 @@ function init() {
 	function initBuffersAndUploadVertices(vertices) {
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
-		if(!gl.vBuffer) {
+		if (!gl.vBuffer) {
 			console.log("Failed to create vertex buffer.");
 			return -1;
 		}
@@ -281,6 +330,10 @@ function init() {
 		var uMVPMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(uMVPMatrix, false, flatten(mvpMat));
 
+		// TODO: zero bottom and right column/row
+		var tmpRMat = rMat;
+		tmpRMat[3][0] = tmpRMat[3][1] = tmpRMat[3][2] = tmpRMat[3][3] = 0;
+		tmpRMat[3][3] = tmpRMat[2][3] = tmpRMat[1][3] = tmpRMat[0][3] = 0;
 		var texMat = mult(inverse4(rMat), inverse4(pMat));
 		var uTexMatrix = gl.getUniformLocation(program, "u_texMatrix");
 		gl.uniformMatrix4fv(uTexMatrix, false, flatten(texMat));
@@ -290,10 +343,11 @@ function init() {
 
 		var uIsReflective = gl.getUniformLocation(program, "u_IsReflective");
 		gl.uniform1i(uIsReflective, 0);
-		
+
 		// gl.drawArrays(gl.TRIANGLES, 0, tetrahedron.length);
 		draw(gl.TRIANGLE_FAN, backgroundQuad);
 
+		gl.uniformMatrix4fv(uTexMatrix, false, flatten(mat4()));
 		gl.uniform1i(uIsReflective, 1);
 		draw(gl.TRIANGLES, tetrahedron);
 	}
@@ -304,7 +358,8 @@ function init() {
 	}
 
 	// === start program ===
-	tick();
+	// it startes when images are loaded
+	// tick();
 }
 
 /**

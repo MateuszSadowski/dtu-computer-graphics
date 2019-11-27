@@ -30,6 +30,7 @@
 
         precision mediump float;
         uniform samplerCube u_TexMap;
+        uniform sampler2D u_BumpMap;
         uniform vec4 u_LightEmission;
         uniform vec4 u_LightAmbient;
         uniform float u_MaterialDiffuse;
@@ -44,10 +45,15 @@
         varying vec3 v_directionPerfectReflection;
         varying vec3 v_normalEyeSpace;
         void main() {
+            float phi = atan(v_Normal.z, v_Normal.x);
+            float theta = acos(v_Normal.y);
+            vec2 texCoords = vec2(0.5 - (phi / (2.0 * M_PI)), theta / M_PI);
+
             if(u_IsReflective == 1) {
-                gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+                //gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
+                gl_FragColor = texture2D(u_BumpMap, texCoords);
             } else {
-                gl_FragColor = textureCube(u_TexMap, v_Normal);
+                gl_FragColor = textureCube(u_TexMap, v_TexCoord);
             }
         }
     </script>
@@ -82,10 +88,8 @@
             v_directionTowardObserver = -normalize(positionOnSphere.xyz);
             v_directionPerfectReflection = 2.0 * dot(v_directionTowardLight, v_normalEyeSpace.xyz) * v_normalEyeSpace.xyz - v_directionTowardLight;
 
-            v_TexCoord = reflect(-u_EyePosition, v_normalEyeSpace);
-            //vec4 Pn = vec4(2.0 * v_Position.x / 512.0 - 1.0, 2.0 * v_Position.y / 512.0 - 1.0, 0, 1);
-            //vec4 texCoords = u_texMatrix * Pn;
-            //v_TexCoord = texCoords.xyz;
+            //v_TexCoord = reflect(-u_EyePosition, v_normalEyeSpace);
+            v_TexCoord = (u_texMatrix * v_Position).xyz;
             gl_Position = v_Position;
         }
     </script>
