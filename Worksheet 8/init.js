@@ -4,7 +4,7 @@ onload = init;
 
 let ORBIT_STEP = 0.01;
 //TODO: remove these constants
-let TRANSLATION_SCALE_FACTOR = 1;
+let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 1;
 let MAX_ORBIT_RADIUS = 25;
 
@@ -23,7 +23,7 @@ function init() {
 	// gl.frontFace(gl.CW);
 
 	// === setup UI ===
-	var translation = [0, 0, 28];
+	var translation = [0, 0, 0];
 	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
@@ -91,17 +91,26 @@ function init() {
 		};
 	}
 
-	// vertices for sphere
-	var va = vec4(0.0, 0.0, 1.0, 1);
-	var vb = vec4(0.0, 0.942809, -0.333333, 1);
-	var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-	var vd = vec4(0.816497, -0.471405, -0.333333, 1);
-	var tetrahedron = [];
+	var groundQuad = [
+		vec4(-2.0, -1.0, -1.0, 1.0),
+		vec4(2.0, -1.0, -1.0, 1.0),
+		vec4(2.0, -1.0, -5.0, 1.0),
+		vec4(-2.0, -1.0, -5.0, 1.0)
+	];
 
-	var plane = [vec4(-4.0, -1.0, -1.0, 1.0),
-	vec4(4.0, -1.0, -1.0, 1.0),
-	vec4(4.0, -1.0, -21.0, 1.0),
-	vec4(-4.0, -1.0, -21.0, 1.0)];
+	var quad1 = [
+		vec4(0.25, -0.5, -1.25, 1.0),
+		vec4(0.75, -0.5, -1.25, 1.0),
+		vec4(0.75, -0.5, -1.75, 1.0),
+		vec4(0.25, -0.5, -1.75, 1.0)
+	];
+
+	var quad2 = [
+		vec4(-1.0, -1.0, -1.25, 1.0),
+		vec4(-1.0, 0.0, -1.25, 1.0),
+		vec4(-1.0, -1.0, -1.75, 1.0),
+		vec4(-1.0, 0.0, -1.75, 1.0)
+	];
 
 	// light source
 	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
@@ -198,7 +207,8 @@ function init() {
 		}
 	}
 
-	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	// var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	var eye = vec3(0, 0, 0);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
@@ -206,46 +216,9 @@ function init() {
 	var pMat = perspective(90, 1, 0.1, 100);
 	var vMat = lookAt(eye, at, up);
 
-	function makeTetrahedron(a, b, c, d, n) {
-		tetrahedron = [];
-		divideTriangle(a, b, c, n);
-		divideTriangle(d, c, b, n);
-		divideTriangle(a, d, b, n);
-		divideTriangle(a, c, d, n);
-	}
-
-	function divideTriangle(a, b, c, count) {
-		if (count > 0) {
-			var ab = normalize(mix(a, b, 0.5), true);
-			var ac = normalize(mix(a, c, 0.5), true);
-			var bc = normalize(mix(b, c, 0.5), true);
-			divideTriangle(a, ab, ac, count - 1);
-			divideTriangle(ab, b, bc, count - 1);
-			divideTriangle(bc, c, ac, count - 1);
-			divideTriangle(ab, bc, ac, count - 1);
-		}
-		else {
-			triangle(a, b, c);
-		}
-	}
-
-	function triangle(a, b, c) {
-		tetrahedron.push(a);
-		tetrahedron.push(b);
-		tetrahedron.push(c);
-	}
-
 	function render() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-		// sphere
-		// makeTetrahedron(va, vb, vc, vd, numOfSubdivisions);
-
-		gl.deleteBuffer(gl.vBuffer);
-		gl.vBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, flatten(plane), gl.STATIC_DRAW);
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -268,7 +241,28 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, plane.length);
+		//TODO: optimize 
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(groundQuad), gl.STATIC_DRAW);
+
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, groundQuad.length);
+
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(quad1), gl.STATIC_DRAW);
+
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, quad1.length);
+
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(quad2), gl.STATIC_DRAW);
+
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quad2.length);
+
 	}
 
 	// === start program ===
