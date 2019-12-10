@@ -62,6 +62,7 @@
             if(u_IsReflective == 1) {
                 //gl_FragColor = textureCube(u_TexMap, v_TexCoord) * u_LightAmbient + textureCube(u_TexMap, v_TexCoord) * u_MaterialDiffuse * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(v_directionPerfectReflection, v_directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(v_normalEyeSpace.xyz, v_directionTowardLight), 0.0);
                 vec4 bumpmapNormal = texture2D(u_BumpMap, texCoords);
+                bumpmapNormal = 2.0 * bumpmapNormal - 1.0;  // map values from [0;1] to [-1;1]
                 vec3 perturbedNormal = rotate_to_normal(v_Normal, bumpmapNormal.xyz);
                 vec3 newTexCoords = reflect(-(u_EyePosition - v_Normal), perturbedNormal);
                 gl_FragColor = textureCube(u_TexMap, newTexCoords);
