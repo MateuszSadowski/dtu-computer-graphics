@@ -27,7 +27,7 @@ function init() {
 	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
 	var numOfSubdivisions = 4;
-	var orbitRadius = 25;
+	var orbitRadius = 0;
 	var orbitAngle = 0;
 	var shouldOrbit = 0;
 
@@ -122,51 +122,57 @@ function init() {
 	//TODO: Add ambient coefficient
 
 	// texture
+	gl.activeTexture(gl.TEXTURE0);
 	var texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);	
 
-	var texSize = 64;
-	var numRows = 8;
-	var numCols = 8;
-	var myTexels = new Uint8Array(4 * texSize * texSize);
-	for (var i = 0; i < texSize; ++i) {
-		for (var j = 0; j < texSize; ++j) {
-			var patchx = Math.floor(i / (texSize / numRows));
-			var patchy = Math.floor(j / (texSize / numCols));
+	var imageLoaded = false;
+	var image = document.createElement("img");
+	image.crossorigin = "anonymous";
+	image.onload = function () {
+		// Insert WebGL texture initialization here
+		var texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
 
-			var c = (patchx % 2 !== patchy % 2 ? 255 : 0);
+		// gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-			myTexels[4 * i * texSize + 4 * j] = c;
-			myTexels[4 * i * texSize + 4 * j + 1] = c;
-			myTexels[4 * i * texSize + 4 * j + 2] = c;
-			myTexels[4 * i * texSize + 4 * j + 3] = 255;
-		}
-	}
+		//TODO: Add buttons to change gl.TEXTURE_WRAP_S and gl.TEXTURE_MIN_FILTER
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+		gl.activeTexture(gl.TEXTURE1);
+		var texture2 = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture2);
+		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap2"), 1);
 
+		var myTexels = new Uint8Array([255, 0, 0, 255]);
+		let texSize = 1;
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+
+		imageLoaded = true;
+	};
+	image.src = "xamp23.png";
+	
 	var texCoord = [
 		vec2(-1.5, 0.0),
 		vec2(2.5, 0.0),
 		vec2(2.5, 10.0),
 		vec2(-1.5, 10.0)
 	];
-
+	
 	var tBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoord), gl.STATIC_DRAW);
-
+	
 	var aTexCoord = gl.getAttribLocation(program, "a_TexCoord");
 	gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(aTexCoord);
-
-	//TODO: Add buttons to change gl.TEXTURE_WRAP_S and gl.TEXTURE_MIN_FILTER
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.generateMipmap(gl.TEXTURE_2D);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 
 	// upload values to shader
 	var vBuffer = gl.createBuffer();
@@ -207,8 +213,8 @@ function init() {
 		}
 	}
 
-	// var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
-	var eye = vec3(0, 0, 0);
+	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
+	// var eye = vec3(0, 0, 0);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
@@ -219,6 +225,8 @@ function init() {
 	function render() {
 		gl.clearColor(0.3921, 0.5843, 0.9294, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		if(!imageLoaded)
+			return;
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -241,6 +249,9 @@ function init() {
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
 
+		var uIsGround = gl.getUniformLocation(program, "u_IsGround");
+		gl.uniform1f(uIsGround, 1.0);
+
 		//TODO: optimize 
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
@@ -249,6 +260,9 @@ function init() {
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, groundQuad.length);
 
+		gl.uniform1f(uIsGround, 0.0);
+
+		gl.activeTexture(gl.TEXTURE1);
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -265,8 +279,13 @@ function init() {
 
 	}
 
+	function tick() {
+		render();
+		requestAnimationFrame(tick);
+	}
+
 	// === start program ===
-	render();
+	tick();
 }
 
 /**
