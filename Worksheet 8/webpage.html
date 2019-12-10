@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html>
+
+<body>
+    <div style="display: flex; flex-direction: row">
+        <canvas id="c" width="512" height="512" style="width: 512px; height: 512px"></canvas>
+        <div style="margin-left: 20px" id="uiContainer">
+            <div id="ui">
+                <div id="x"></div>
+                <div id="y"></div>
+                <div id="z"></div>
+                <div id="angleX"></div>
+                <div id="angleY"></div>
+                <div id="angleZ"></div>
+                <div id="scaleX"></div>
+                <div id="scaleY"></div>
+                <div id="scaleZ"></div>
+                <div id="orbitR"></div>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-top: 10px">
+            <button id="inc-sub" style="padding: 5px; margin: 5px">Increase subdivision</button>
+            <button id="dec-sub" style="padding: 5px; margin: 5px">Decrease subdivision</button>
+            <button id="orbit" style="padding: 5px; margin: 5px">Orbit on/off</button>
+        </div>
+    </div>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        uniform sampler2D u_TexMap;
+        varying vec4 v_Color;
+        varying vec2 v_TexCoord;
+        void main() {
+            gl_FragColor = v_Color * texture2D(u_TexMap, v_TexCoord);
+        }
+    </script>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 a_Position;
+        attribute vec4 a_Color;
+        attribute vec2 a_TexCoord;
+
+        uniform mat4 u_mvpMatrix;
+        uniform mat4 u_mvMatrix;
+        uniform mat3 u_NMatrix;
+        uniform vec4 u_LightPosition;
+        uniform vec4 u_LightEmission;
+        uniform vec4 u_LightAmbiance;
+        uniform float u_MaterialDiffuse;
+        uniform float u_MaterialSpecular;
+        uniform float u_MaterialShininess;
+
+        varying vec4 v_Color;
+        varying vec4 v_Position;
+        varying vec3 v_Normal;
+        varying vec2 v_TexCoord;
+        void main() {
+            v_Position = u_mvpMatrix * a_Position;
+
+            vec3 v_Normal = normalize(a_Position.xyz);
+            vec3 normalEyeSpace = normalize(u_NMatrix * v_Normal);
+            vec3 directionTowardLight = u_LightPosition.w == 0.0 ? normalize(-u_LightPosition.xyz) : normalize(u_LightPosition.xyz - v_Position.xyz);
+            vec4 positionOnSphere = u_mvMatrix * a_Position;
+            vec3 directionTowardObserver = -normalize(positionOnSphere.xyz);
+            vec3 directionPerfectReflection = 2.0 * dot(directionTowardLight, normalEyeSpace.xyz) * normalEyeSpace.xyz - directionTowardLight;
+
+            //v_Color = u_LightAmbiance + u_MaterialDiffuse * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0) * u_LightEmission + u_MaterialSpecular * pow(max(dot(directionPerfectReflection, directionTowardObserver), 0.0), u_MaterialShininess) * u_LightEmission * max(dot(normalEyeSpace.xyz, directionTowardLight), 0.0);
+            //v_Color.a = 1.0;
+            v_Color = vec4(1.0, 1.0, 1.0, 1.0);
+            v_TexCoord = a_TexCoord;
+            gl_Position = v_Position;
+        }
+    </script>
+
+    <script type="text/javascript" src="init.js"></script>
+    <script type="text/javascript" src="../angelCommon/webgl-utils.js"></script>
+    <script type="text/javascript" src="./webgl-lessons-ui.js"></script>
+    <script type="text/javascript" src="../angelCommon/MV.js"></script>
+    <script type="text/javascript" src="../angelCommon/MVnew.js"></script>
+    <script type="text/javascript" src="../angelCommon/initShaders.js"></script>
+</body>
+
+</html>
