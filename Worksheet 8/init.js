@@ -8,6 +8,7 @@ let ORBIT_LIGHT_STEP = 0.01;
 let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 1;
 let MAX_ORBIT_RADIUS = 25;
+let SHADOW_DEPTH_OFFSET = 0.001;
 
 function init() {
 	var canvas = document.getElementById("c");
@@ -19,7 +20,7 @@ function init() {
 	var program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
 	gl.vBuffer = null;
-	// gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.DEPTH_TEST);
 	// gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
@@ -129,7 +130,7 @@ function init() {
 	// shadowpM[15] = 0.0;
 	// shadowpM[14] = -1.0 / (lightDirection[1] - (-1.0));
 	shadowpM[3][3] = 0.0;
-	shadowpM[3][1] = 1.0/-(lightDirection[1] + 1.0);
+	shadowpM[3][1] = 1.0 / -(lightDirection[1] + 1.0);
 
 	// texture
 	gl.activeTexture(gl.TEXTURE0);
@@ -271,7 +272,11 @@ function init() {
 		var uIsGround = gl.getUniformLocation(program, "u_IsGround");
 		gl.uniform1f(uIsGround, 1.0);
 
+		var uShadowVisibility = gl.getUniformLocation(program, "u_ShadowVisibility");
+		gl.uniform1f(uShadowVisibility, 1.0);
+
 		//TODO: optimize 
+		gl.depthFunc(gl.LESS);
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -280,14 +285,16 @@ function init() {
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, groundQuad.length);
 
 		gl.uniform1f(uIsGround, 0.0);
+		gl.uniform1f(uShadowVisibility, 0.0);
 
 		let shadowmvMat = mvMat;
-		shadowmvMat = mult(shadowmvMat, translate(lightDirection[0], lightDirection[1], lightDirection[2]));
+		shadowmvMat = mult(shadowmvMat, translate(lightDirection[0], lightDirection[1] - SHADOW_DEPTH_OFFSET, lightDirection[2]));
 		shadowmvMat = mult(shadowmvMat, shadowpM);
-		shadowmvMat = mult(shadowmvMat, translate(-lightDirection[0], -lightDirection[1], -lightDirection[2]));
+		shadowmvMat = mult(shadowmvMat, translate(-lightDirection[0], -(lightDirection[1] - SHADOW_DEPTH_OFFSET), -lightDirection[2]));
 
 		gl.uniformMatrix4fv(umvMatrix, false, flatten(shadowmvMat));
 
+		gl.depthFunc(gl.GREATER);
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -303,7 +310,9 @@ function init() {
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quad2.length);
 
 		gl.uniformMatrix4fv(umvMatrix, false, flatten(mvMat));
+		gl.uniform1f(uShadowVisibility, 1.0);
 
+		gl.depthFunc(gl.LESS);
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
