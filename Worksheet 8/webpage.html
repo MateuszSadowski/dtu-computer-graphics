@@ -48,6 +48,7 @@
 
         uniform mat4 u_mvpMatrix;
         uniform mat4 u_mvMatrix;
+        uniform mat4 u_pMatrix;
         uniform mat3 u_NMatrix;
         uniform vec4 u_LightPosition;
         uniform vec4 u_LightEmission;
@@ -61,7 +62,8 @@
         varying vec3 v_Normal;
         varying vec2 v_TexCoord;
         void main() {
-            v_Position = u_mvpMatrix * a_Position;
+            v_Position = (u_pMatrix * u_mvMatrix) * a_Position;
+            //v_Position = u_mvpMatrix * a_Position;
 
             vec3 v_Normal = normalize(a_Position.xyz);
             vec3 normalEyeSpace = normalize(u_NMatrix * v_Normal);
@@ -82,7 +84,7 @@
     <script type="text/javascript" src="../angelCommon/webgl-utils.js"></script>
     <script type="text/javascript" src="./webgl-lessons-ui.js"></script>
     <script type="text/javascript" src="../angelCommon/MV.js"></script>
-    <script type="text/javascript" src="../angelCommon/MVnew.js"></script>
+    <!-- <script type="text/javascript" src="../angelCommon/MVnew.js"></script> -->
     <script type="text/javascript" src="../angelCommon/initShaders.js"></script>
 </body>
 

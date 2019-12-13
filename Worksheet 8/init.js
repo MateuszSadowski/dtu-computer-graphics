@@ -3,6 +3,7 @@
 onload = init;
 
 let ORBIT_STEP = 0.01;
+let ORBIT_LIGHT_STEP = 0.01;
 //TODO: remove these constants
 let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 1;
@@ -18,7 +19,7 @@ function init() {
 	var program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
 	gl.vBuffer = null;
-	gl.enable(gl.DEPTH_TEST);
+	// gl.enable(gl.DEPTH_TEST);
 	// gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 
@@ -30,6 +31,8 @@ function init() {
 	var orbitRadius = 0;
 	var orbitAngle = 0;
 	var shouldOrbit = 0;
+	let orbitLightAngle = 0;
+	let orbitLightRadius = 5;
 
 	// https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
 	webglLessonsUI.setupSlider("#x", { value: translation[0], slide: updatePosition(0), min: -gl.canvas.width, max: gl.canvas.width });
@@ -106,20 +109,27 @@ function init() {
 	];
 
 	var quad2 = [
-		vec4(-1.0, -1.0, -1.25, 1.0),
-		vec4(-1.0, 0.0, -1.25, 1.0),
-		vec4(-1.0, -1.0, -1.75, 1.0),
-		vec4(-1.0, 0.0, -1.75, 1.0)
+		vec4(-1.0, -1.0, -2.5, 1.0),
+		vec4(-1.0, 0.0, -2.5, 1.0),
+		vec4(-1.0, -1.0, -3.0, 1.0),
+		vec4(-1.0, 0.0, -3.0, 1.0)
 	];
 
 	// light source
-	var lightDirection = vec4(0.0, 0.0, -1.0, 0.0);
+	var lightDirection = vec4(1.0, 2.0, -2.0, 1.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
 	var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 	var materialDiffuse = 1.0;
 	var materialSpecular = 1.0;
 	var materialShininess = 100.0;
 	//TODO: Add ambient coefficient
+
+	// shadow projection
+	let shadowpM = mat4();
+	// shadowpM[15] = 0.0;
+	// shadowpM[14] = -1.0 / (lightDirection[1] - (-1.0));
+	shadowpM[3][3] = 0.0;
+	shadowpM[3][1] = 1.0/-(lightDirection[1] + 1.0);
 
 	// texture
 	gl.activeTexture(gl.TEXTURE0);
@@ -218,8 +228,8 @@ function init() {
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
-	// var pMat = ortho(-20, 20, -20, 20, -100, 100);
-	var pMat = perspective(90, 1, 0.1, 100);
+	// var pMat = ortho(-2, 2, -2, 2, -100, 100);
+	var pMat = perspective(90, gl.canvas.clientWidth/gl.canvas.clientHeight, 0.9294, 10);
 	var vMat = lookAt(eye, at, up);
 
 	function render() {
@@ -228,6 +238,12 @@ function init() {
 		if(!imageLoaded)
 			return;
 
+		// orbit light
+		orbitLightAngle += ORBIT_LIGHT_STEP;
+		lightDirection[0] = orbitLightRadius * Math.sin(orbitLightAngle);
+		lightDirection[2] = orbitLightRadius * Math.cos(orbitLightAngle);
+		shadowpM[3][1] = 1.0/-(lightDirection[1] + 1.0);	// -1 / (light.y - ground.y)
+
 		// compute matrices
 		// last specified transformation is first to be applied
 		var mMat = mat4();
@@ -235,7 +251,7 @@ function init() {
 		mMat = mult(mMat, rotate(rotation[0], vec3(1, 0, 0)));
 		mMat = mult(mMat, rotate(rotation[1], vec3(0, 1, 0)));
 		mMat = mult(mMat, rotate(rotation[2], vec3(0, 0, 1)));
-		mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
+		// mMat = mult(mMat, scale(scaleValues[0], scaleValues[1], scaleValues[2]));
 		var mvMat = mult(vMat, mMat);
 		var mvpMat = mult(pMat, mvMat);
 
@@ -245,6 +261,9 @@ function init() {
 
 		var umvMatrix = gl.getUniformLocation(program, "u_mvMatrix");
 		gl.uniformMatrix4fv(umvMatrix, false, flatten(mvMat));
+
+		var upMatrix = gl.getUniformLocation(program, "u_pMatrix");
+		gl.uniformMatrix4fv(upMatrix, false, flatten(pMat));
 
 		var umvpMatrix = gl.getUniformLocation(program, "u_mvpMatrix");
 		gl.uniformMatrix4fv(umvpMatrix, false, flatten(mvpMat));
@@ -262,7 +281,29 @@ function init() {
 
 		gl.uniform1f(uIsGround, 0.0);
 
-		gl.activeTexture(gl.TEXTURE1);
+		let shadowmvMat = mvMat;
+		shadowmvMat = mult(shadowmvMat, translate(lightDirection[0], lightDirection[1], lightDirection[2]));
+		shadowmvMat = mult(shadowmvMat, shadowpM);
+		shadowmvMat = mult(shadowmvMat, translate(-lightDirection[0], -lightDirection[1], -lightDirection[2]));
+
+		gl.uniformMatrix4fv(umvMatrix, false, flatten(shadowmvMat));
+
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(quad1), gl.STATIC_DRAW);
+
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, quad1.length);
+
+		gl.deleteBuffer(gl.vBuffer);
+		gl.vBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(quad2), gl.STATIC_DRAW);
+
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quad2.length);
+
+		gl.uniformMatrix4fv(umvMatrix, false, flatten(mvMat));
+
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
