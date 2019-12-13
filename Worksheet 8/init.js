@@ -12,7 +12,7 @@ let SHADOW_DEPTH_OFFSET = 0.001;
 
 function init() {
 	var canvas = document.getElementById("c");
-	var gl = setupWebGL(canvas);
+	var gl = setupWebGL(canvas, { alpha: false });
 	if (!gl) {
 		return;
 	}
@@ -21,6 +21,8 @@ function init() {
 	gl.useProgram(program);
 	gl.vBuffer = null;
 	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.BLEND);
+	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 	// gl.enable(gl.CULL_FACE);
 	// gl.frontFace(gl.CW);
 

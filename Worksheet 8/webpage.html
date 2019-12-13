@@ -38,7 +38,7 @@
                 gl_FragColor = texture2D(u_TexMap, v_TexCoord);
             } else {
                 gl_FragColor = u_ShadowVisibility * texture2D(u_TexMap2, v_TexCoord);
-                gl_FragColor.a = 1.0;
+                gl_FragColor.a = u_ShadowVisibility == 0.0 ? 0.8 : 1.0;
             }
         }
     </script>
