@@ -2,12 +2,9 @@
 
 onload = init;
 
-let ORBIT_STEP = 0.01;
 let ORBIT_LIGHT_STEP = 0.01;
-//TODO: remove these constants
 let TRANSLATION_SCALE_FACTOR = 200;
 let Z_TRANSLATION_RANGE_FACTOR = 1;
-let MAX_ORBIT_RADIUS = 25;
 let SHADOW_DEPTH_OFFSET = 0.001;
 
 function init() {
@@ -23,17 +20,11 @@ function init() {
 	gl.enable(gl.DEPTH_TEST);
 	gl.enable(gl.BLEND);
 	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-	// gl.enable(gl.CULL_FACE);
-	// gl.frontFace(gl.CW);
 
 	// === setup UI ===
 	var translation = [0, 0, 0];
 	var rotation = [0, 0, 0];
 	var scaleValues = [1, 1, 1];
-	var numOfSubdivisions = 4;
-	var orbitRadius = 0;
-	var orbitAngle = 0;
-	var shouldOrbit = 0;
 	let orbitLightAngle = 0;
 	let orbitLightRadius = 5;
 
@@ -47,27 +38,6 @@ function init() {
 	webglLessonsUI.setupSlider("#scaleX", { value: scaleValues[0], slide: updateScale(0), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleY", { value: scaleValues[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2 });
 	webglLessonsUI.setupSlider("#scaleZ", { value: scaleValues[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2 });
-	webglLessonsUI.setupSlider("#orbitR", { value: orbitRadius, slide: updateOrbitRadius(), min: 1, max: MAX_ORBIT_RADIUS, step: 0.01, precision: 2 });
-	// buttons
-	var decreaseSubdivisionButton = document.getElementById("dec-sub");
-	decreaseSubdivisionButton.addEventListener("click", () => {
-		if (numOfSubdivisions > 0) {
-			numOfSubdivisions--;
-			render();
-		}
-	})
-	var increaseSubdivisionButton = document.getElementById("inc-sub");
-	increaseSubdivisionButton.addEventListener("click", () => {
-		if (numOfSubdivisions < 9) {
-			numOfSubdivisions++;
-		}
-		render();
-	})
-	var toggleOrbitButton = document.getElementById("orbit");
-	toggleOrbitButton.addEventListener("click", () => {
-		shouldOrbit = (shouldOrbit + 1) % 2;
-		orbit();
-	})
 
 	function updatePosition(index) {
 		return function (event, ui) {
@@ -90,18 +60,12 @@ function init() {
 		};
 	}
 
-	function updateOrbitRadius() {
-		return function (event, ui) {
-			orbitRadius = ui.value;
-			render();
-		};
-	}
-
+	let groundPosY = -1;
 	var groundQuad = [
-		vec4(-2.0, -1.0, -1.0, 1.0),
-		vec4(2.0, -1.0, -1.0, 1.0),
-		vec4(2.0, -1.0, -5.0, 1.0),
-		vec4(-2.0, -1.0, -5.0, 1.0)
+		vec4(-2.0, groundPosY, -1.0, 1.0),
+		vec4(2.0, groundPosY, -1.0, 1.0),
+		vec4(2.0, groundPosY, -5.0, 1.0),
+		vec4(-2.0, groundPosY, -5.0, 1.0)
 	];
 
 	var quad1 = [
@@ -119,20 +83,17 @@ function init() {
 	];
 
 	// light source
-	var lightDirection = vec4(1.0, 2.0, -2.0, 1.0);
+	var lightDirection = vec4(0.0, 2.0, -2.0, 1.0);
 	var lightEmission = vec4(1.0, 1.0, 1.0, 1.0);
 	var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 	var materialDiffuse = 1.0;
 	var materialSpecular = 1.0;
 	var materialShininess = 100.0;
-	//TODO: Add ambient coefficient
 
 	// shadow projection
 	let shadowpM = mat4();
-	// shadowpM[15] = 0.0;
-	// shadowpM[14] = -1.0 / (lightDirection[1] - (-1.0));
 	shadowpM[3][3] = 0.0;
-	shadowpM[3][1] = 1.0 / -(lightDirection[1] + 1.0);
+	shadowpM[3][1] = 1.0 / -(lightDirection[1] - groundPosY);
 
 	// texture
 	gl.activeTexture(gl.TEXTURE0);
@@ -149,7 +110,6 @@ function init() {
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
 
-		// gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
 		//TODO: Add buttons to change gl.TEXTURE_WRAP_S and gl.TEXTURE_MIN_FILTER
@@ -214,20 +174,7 @@ function init() {
 	gl.uniform1f(uMaterialShininess, materialShininess);
 
 	// === setup methods ===
-	function orbit() {
-		if (shouldOrbit) {
-			eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
-			vMat = lookAt(eye, at, up);
-			render();
-			orbitAngle += ORBIT_STEP;
-			requestAnimationFrame(orbit);
-		} else {
-			render();
-		}
-	}
-
-	var eye = vec3(orbitRadius * Math.sin(orbitAngle), 0, orbitRadius * Math.cos(orbitAngle));
-	// var eye = vec3(0, 0, 0);
+	var eye = vec3(0, 0, 0);
 	var at = vec3(0, 0, 0);
 	var up = vec3(0, 1, 0);
 
@@ -245,7 +192,7 @@ function init() {
 		orbitLightAngle += ORBIT_LIGHT_STEP;
 		lightDirection[0] = orbitLightRadius * Math.sin(orbitLightAngle);
 		lightDirection[2] = orbitLightRadius * Math.cos(orbitLightAngle);
-		shadowpM[3][1] = 1.0/-(lightDirection[1] + 1.0);	// -1 / (light.y - ground.y)
+		shadowpM[3][1] = 1.0/-(lightDirection[1] - groundPosY);	// -1 / (light.y - ground.y)
 
 		// compute matrices
 		// last specified transformation is first to be applied
@@ -277,7 +224,7 @@ function init() {
 		var uShadowVisibility = gl.getUniformLocation(program, "u_ShadowVisibility");
 		gl.uniform1f(uShadowVisibility, 1.0);
 
-		//TODO: optimize 
+		//TODO: refactor 
 		gl.depthFunc(gl.LESS);
 		gl.deleteBuffer(gl.vBuffer);
 		gl.vBuffer = gl.createBuffer();
